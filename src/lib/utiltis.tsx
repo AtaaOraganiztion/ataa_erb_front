@@ -1,9 +1,10 @@
-import { 
+import {
   LayoutDashboard, DollarSign, TrendingUp, CreditCard, FileText,
   Users, Clock, Award, Utensils, Package, Building, Smartphone,
-  Settings, UserCircle, Briefcase, ShoppingCart, 
+  Settings, UserCircle, Briefcase, ShoppingCart,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import EmployeesPage from "../pages/HR/Employees/Employees";
 
 export interface SubItem {
   id: string;
@@ -11,9 +12,10 @@ export interface SubItem {
   page: string;
   badge?: string;
   url: string;
+  component?: React.ReactNode;
 }
 
- export interface NavItem {
+export interface NavItem {
   id: string;
   label: string;
   icon?: LucideIcon;
@@ -21,9 +23,10 @@ export interface SubItem {
   badge?: string;
   subItems?: SubItem[];
   url?: string;
+  component?: React.ReactNode;
 }
 
-export  interface NavCategory {
+export interface NavCategory {
   id: string;
   title: string;
   items: NavItem[];
@@ -38,7 +41,7 @@ export const NAV_CONFIG: NavCategory[] = [
         id: "dashboard",
         label: "لوحة المعلومات الرئيسية",
         icon: LayoutDashboard,
-        page: "dashboard",
+        component: "Dashboard",
         url: "/dashboard",
       },
     ],
@@ -83,7 +86,7 @@ export const NAV_CONFIG: NavCategory[] = [
         label: "الميزانيات والتخطيط",
         icon: TrendingUp,
         subItems: [
-          { id: "budgets", label: "إدارة الميزانيات", page: "budgets" , url: "/budgets" },
+          { id: "budgets", label: "إدارة الميزانيات", page: "budgets", url: "/budgets" },
           {
             id: "budget-allocation",
             label: "توزيع الميزانيات",
@@ -109,7 +112,7 @@ export const NAV_CONFIG: NavCategory[] = [
         label: "المصروفات والإيرادات",
         icon: CreditCard,
         subItems: [
-          { id: "expenses", label: "إدارة المصروفات", page: "expenses" ,url: "/expenses"},
+          { id: "expenses", label: "إدارة المصروفات", page: "expenses", url: "/expenses" },
           { id: "revenues", label: "إدارة الإيرادات", page: "revenues", url: "/revenues" },
           { id: "cash-flow", label: "التدفقات النقدية", page: "cash-flow", url: "/cash-flow" },
           {
@@ -158,7 +161,11 @@ export const NAV_CONFIG: NavCategory[] = [
         label: "إدارة الموظفين",
         icon: Users,
         subItems: [
-          { id: "employees", label: "قائمة الموظفين", page: "employees", url: "/employees" },
+          {
+            id: "employees", label: "قائمة الموظفين", page: "employees",
+            url: "/employees",
+            component: <EmployeesPage />,
+          },
           {
             id: "recruitment",
             label: "التوظيف",
@@ -230,7 +237,7 @@ export const NAV_CONFIG: NavCategory[] = [
             page: "catering-procurement",
             url: "/catering-procurement",
           },
-          { id: "catering-quality", label: "الجودة", page: "catering-quality", url: "/catering-quality"  },
+          { id: "catering-quality", label: "الجودة", page: "catering-quality", url: "/catering-quality" },
           {
             id: "catering-reports",
             label: "التقارير",
@@ -344,7 +351,7 @@ export const NAV_CONFIG: NavCategory[] = [
         label: "إدارة العملاء (CRM)",
         icon: UserCircle,
         subItems: [
-          { id: "clients", label: "قاعدة العملاء", page: "clients" ,url: "/clients" },
+          { id: "clients", label: "قاعدة العملاء", page: "clients", url: "/clients" },
           {
             id: "leads",
             label: "العملاء المحتملين",
@@ -428,14 +435,14 @@ export const NAV_CONFIG: NavCategory[] = [
             page: "purchase-requests",
             url: "/purchase-requests",
           },
-          { id: "rfq", label: "طلبات عروض الأسعار", page: "rfq" , url: "/rfq" },
+          { id: "rfq", label: "طلبات عروض الأسعار", page: "rfq", url: "/rfq" },
           {
             id: "purchase-orders",
             label: "أوامر الشراء",
             page: "purchase-orders",
             url: "/purchase-orders",
           },
-          { id: "vendors", label: "الموردين", page: "vendors" , url: "/vendors" },
+          { id: "vendors", label: "الموردين", page: "vendors", url: "/vendors" },
         ],
       },
       {
@@ -443,8 +450,8 @@ export const NAV_CONFIG: NavCategory[] = [
         label: "إدارة المخزون",
         icon: Package,
         subItems: [
-          { id: "inventory", label: "المخزون", page: "inventory" ,url: "/inventory" },
-          { id: "warehouses", label: "المخازن", page: "warehouses" , url: "/warehouses" },
+          { id: "inventory", label: "المخزون", page: "inventory", url: "/inventory" },
+          { id: "warehouses", label: "المخازن", page: "warehouses", url: "/warehouses" },
           {
             id: "stock-movement",
             label: "حركة المخزون",
@@ -470,7 +477,7 @@ export const NAV_CONFIG: NavCategory[] = [
         label: "المستخدمين والصلاحيات",
         icon: Users,
         subItems: [
-          { id: "users", label: "المستخدمين", page: "users" , url: "/users" },
+          { id: "users", label: "المستخدمين", page: "users", url: "/users" },
           { id: "roles", label: "الأدوار", page: "roles", url: "/roles" },
           { id: "permissions", label: "الصلاحيات", page: "permissions", url: "/permissions" },
         ],

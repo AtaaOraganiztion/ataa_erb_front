@@ -5,6 +5,7 @@ import NotFound from "./pages/NotFound";
 import Error from "./pages/Error";
 import Layout from "./components/layout/Layout";
 import { NAV_CONFIG } from "./lib/utiltis";
+import LoginPage from "./pages/Auth/Login";
 
 const DynamicPage = ({ title }: { title: string }) => <div>Page: {title}</div>;
 
@@ -16,7 +17,7 @@ const generateRoutes = () => {
       if (item.url) {
         routes.push({
           path: item.url,
-          element: <DynamicPage title={item.label} />,
+          element: item.component ? item.component : <DynamicPage title={item.label} />,
         });
       }
 
@@ -24,7 +25,7 @@ const generateRoutes = () => {
         item.subItems.forEach((sub: any) => {
           routes.push({
             path: sub.url,
-            element: <DynamicPage title={sub.label} />,
+            element: sub.component ? sub.component : <DynamicPage title={sub.label} />,
           });
         });
       }
@@ -46,6 +47,10 @@ export const router = createBrowserRouter([
       },
       ...generateRoutes(),
     ],
+  },
+  {
+    path: "/login",
+    element: <LoginPage />,
   },
   { path: "*", element: <NotFound /> },
 ]);
