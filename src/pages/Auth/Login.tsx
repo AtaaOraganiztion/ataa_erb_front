@@ -1,37 +1,57 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Mail, Lock, LogIn } from "lucide-react";
 import logo from "../../assets/Logo2.jpg";
 import { useForm } from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup"
-import * as yup from "yup"
-
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
+import { useAuth } from "../../context/AuthContext";
 type LoginPageProps = {
-    email: string;
-    password: string;
+  email: string;
+  password: string;
 };
 
-const LoginSchema = yup
-  .object({
-    email: yup.string().required( "البريد الإلكتروني مطلوب").email( "صيغة البريد الإلكتروني غير صحيحة" ),
-    password: yup.string().required("كلمة المرور مطلوبة" ).min(6,  "كلمة المرور يجب أن تكون 6 أحرف على الأقل" ),
-  })
-
+const LoginSchema = yup.object({
+  email: yup
+    .string()
+    .required("البريد الإلكتروني مطلوب")
+    .email("صيغة البريد الإلكتروني غير صحيحة"),
+  password: yup
+    .string()
+    .required("كلمة المرور مطلوبة")
+    .min(6, "كلمة المرور يجب أن تكون 6 أحرف على الأقل"),
+});
 
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const { register, handleSubmit, formState: { errors , isSubmitting } } = useForm<LoginPageProps>({
-    resolver: yupResolver(LoginSchema)
+  const navigate = useNavigate();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginPageProps>({
+    resolver: yupResolver(LoginSchema),
   });
+  const { login } = useAuth();
 
+  const handleLogin = async (data: LoginPageProps) => {
+    const result = await login(data.email, data.password);
 
-const handleLogin = async (data: LoginPageProps) => {
-  await new Promise(resolve => setTimeout(resolve, 1500));
-  console.log("Login attempt:", data);
-};
-
+    if (result.success) {
+      // show error to user
+      navigate("/dashboard");
+      console.log("Login successful:", result);
+    } else {
+      // show error to user
+      console.error("Login failed:", result.error);
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-[#F5F1E8] via-white to-[#EBE7DC] flex items-center justify-center p-4" dir="rtl">
+    <div
+      className="min-h-screen bg-linear-to-br from-[#F5F1E8] via-white to-[#EBE7DC] flex items-center justify-center p-4"
+      dir="rtl"
+    >
       {/* زخارف الخلفية */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 right-0 w-96 h-96 bg-[#1B5E4F]/5 rounded-full blur-3xl"></div>
@@ -46,13 +66,13 @@ const handleLogin = async (data: LoginPageProps) => {
             {/* زخارف */}
             <div className="absolute top-0 right-0 w-32 h-32 border-t-4 border-r-4 border-white/10 rounded-tr-3xl"></div>
             <div className="absolute bottom-0 left-0 w-32 h-32 border-b-4 border-l-4 border-white/10 rounded-bl-3xl"></div>
-            
+
             <div className="relative z-10">
               {/* اللوجو */}
               <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center shadow-lg">
-                <img 
-                  src={logo} 
-                  alt="Logo" 
+                <img
+                  src={logo}
+                  alt="Logo"
                   className="w-20 h-20 rounded-full object-cover"
                 />
               </div>
@@ -72,8 +92,6 @@ const handleLogin = async (data: LoginPageProps) => {
           {/* Form */}
           <div className="p-8">
             <form onSubmit={handleSubmit(handleLogin)} className="space-y-6">
-          
-
               {/* حقل البريد الإلكتروني */}
               <div>
                 <label className="block text-[#1B5E4F] font-semibold mb-2 text-sm">
@@ -92,9 +110,11 @@ const handleLogin = async (data: LoginPageProps) => {
                       placeholder:text-gray-400"
                     disabled={isSubmitting}
                   />
-                    {errors.email && (
-                      <p className="text-red-700 text-sm mt-1">{errors.email?.message}</p>
-                    )}
+                  {errors.email && (
+                    <p className="text-red-700 text-sm mt-1">
+                      {errors.email?.message}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -108,18 +128,20 @@ const handleLogin = async (data: LoginPageProps) => {
                     <Lock size={20} />
                   </div>
                   <input
-                type={showPassword ? "text" : "password"}
-  {...register("password")}
-                 placeholder="......"
+                    type={showPassword ? "text" : "password"}
+                    {...register("password")}
+                    placeholder="......"
                     className="w-full pr-12 pl-12 py-3 border-2 border-[#B8976B]/30 rounded-xl
                       focus:border-[#1B5E4F] focus:ring-2 focus:ring-[#1B5E4F]/20
                       outline-none transition-all duration-300
                       placeholder:text-gray-400"
                     disabled={isSubmitting}
                   />
-                     {errors.password && (
-                        <p className="text-red-700 text-sm mt-1">{errors.password?.message}</p>
-                     )}
+                  {errors.password && (
+                    <p className="text-red-700 text-sm mt-1">
+                      {errors.password?.message}
+                    </p>
+                  )}
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
@@ -130,7 +152,6 @@ const handleLogin = async (data: LoginPageProps) => {
                   </button>
                 </div>
               </div>
-
 
               {/* زر تسجيل الدخول */}
               <button
@@ -146,7 +167,7 @@ const handleLogin = async (data: LoginPageProps) => {
               >
                 {/* تأثير الخلفية عند hover */}
                 <div className="absolute inset-0 bg-linear-to-r from-[#0F4F3E] to-[#1B5E4F] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                
+
                 <div className="relative z-10 flex items-center justify-center gap-2">
                   {isSubmitting ? (
                     <>
@@ -171,8 +192,6 @@ const handleLogin = async (data: LoginPageProps) => {
             </p>
           </div>
         </div>
-
-       
       </div>
     </div>
   );
