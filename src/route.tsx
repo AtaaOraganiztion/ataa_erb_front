@@ -17,7 +17,11 @@ const generateRoutes = () => {
       if (item.url) {
         routes.push({
           path: item.url,
-          element: item.component ? item.component : <DynamicPage title={item.label} />,
+          element: item.component ? (
+            item.component
+          ) : (
+            <DynamicPage title={item.label} />
+          ),
         });
       }
 
@@ -25,7 +29,11 @@ const generateRoutes = () => {
         item.subItems.forEach((sub: any) => {
           routes.push({
             path: sub.url,
-            element: sub.component ? sub.component : <DynamicPage title={sub.label} />,
+            element: sub.component ? (
+              sub.component
+            ) : (
+              <DynamicPage title={sub.label} />
+            ),
           });
         });
       }
@@ -38,15 +46,13 @@ const generateRoutes = () => {
 export const router = createBrowserRouter([
   {
     path: "/",
+    element: <Home />,
+  },
+  {
+    path: "/",
     element: <Layout />,
     errorElement: <Error />,
-    children: [
-      {
-        index: true,
-        element: <Home />,
-      },
-      ...generateRoutes(),
-    ],
+    children: generateRoutes(), 
   },
   {
     path: "/login",

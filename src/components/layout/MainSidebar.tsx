@@ -1,21 +1,18 @@
 import { useState } from "react";
-import { ChevronDown, ChevronRight, X, Menu, ArrowRight, LogOut, User } from "lucide-react";
+import { useNavigate, Link } from "react-router-dom";
+import { ChevronDown, ChevronRight, LogOut, User } from "lucide-react";
 import { NAV_CONFIG, type SubItem } from "../../lib/utiltis";
 import logo from "../../assets/Logo2.jpg";
-import { Link } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 const ModernSidebar = () => {
   const [activePage, setActivePage] = useState("dashboard");
-  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
-
-  // بيانات المستخدم (يمكنك استبدالها بالبيانات الحقيقية من الـ state management)
-  const [user] = useState({
-    name: "أحمد محمد",
-    email: "ahmed@example.com",
-    avatar: null // أو رابط الصورة
-  });
-
-  const toggleExpanded = (itemId : string) => {
+  const navigate = useNavigate();
+  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>(
+    {},
+  );
+  const { user, logout } = useAuth();
+  const toggleExpanded = (itemId: string) => {
     setExpandedItems((prev) => ({
       ...prev,
       [itemId]: !prev[itemId],
@@ -23,13 +20,17 @@ const ModernSidebar = () => {
   };
 
   const handleLogout = () => {
-    // هنا تضع كود تسجيل الخروج
-    console.log("Logging out...");
-    // مثال: localStorage.removeItem('token');
-    // navigate('/login');
+    logout();
+    navigate("/");
   };
 
-  const NavItem = ({ item, isSubItem = false } : { item: any, isSubItem?: boolean }) => {
+  const NavItem = ({
+    item,
+    isSubItem = false,
+  }: {
+    item: any;
+    isSubItem?: boolean;
+  }) => {
     const Icon = item.icon;
     const hasSubItems = item.subItems && item.subItems.length > 0;
     const isExpanded = expandedItems[item.id];
@@ -63,11 +64,13 @@ const ModernSidebar = () => {
 
           <div className="flex items-center gap-3 flex-1 relative z-10">
             {Icon && (
-              <div className={`p-1.5 rounded-lg transition-all duration-300 ${
-                isActive 
-                  ? "bg-white/20" 
-                  : "bg-[#B8976B]/10 group-hover:bg-[#B8976B]/20"
-              }`}>
+              <div
+                className={`p-1.5 rounded-lg transition-all duration-300 ${
+                  isActive
+                    ? "bg-white/20"
+                    : "bg-[#B8976B]/10 group-hover:bg-[#B8976B]/20"
+                }`}
+              >
                 <Icon
                   size={isSubItem ? 16 : 18}
                   className={
@@ -78,11 +81,13 @@ const ModernSidebar = () => {
                 />
               </div>
             )}
-           <Link to={item.url || "#"} className="flex-1 text-right">
-            <span className={`font-semibold ${isActive ? "text-white" : ""}`}>
-              {item.label}
-            </span></Link>
+            <Link to={item.url || "#"} className="flex-1 text-right">
+              <span className={`font-semibold ${isActive ? "text-white" : ""}`}>
+                {item.label}
+              </span>
+            </Link>
           </div>
+
           {hasSubItems && (
             <div
               className={`transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
@@ -109,7 +114,7 @@ const ModernSidebar = () => {
 
         {hasSubItems && isExpanded && item.subItems && (
           <div className="mr-6 mt-1 space-y-1 border-r-2 border-[#B8976B]/30 pr-2">
-            {item.subItems.map((subItem : SubItem) => (
+            {item.subItems.map((subItem: SubItem) => (
               <NavItem key={subItem.id} item={subItem} isSubItem={true} />
             ))}
           </div>
@@ -122,116 +127,116 @@ const ModernSidebar = () => {
     <div className="flex h-screen bg-[#F5F1E8] overflow-hidden" dir="rtl">
       {/* Sidebar */}
       <div
-        className={`
-          bg-white border-l-2 border-[#B8976B]/30 shadow-2xl
-          transition-all duration-300 ease-in-out
-          "w-80" 
+        className="bg-white border-l-2 border-[#B8976B]/30 shadow-2xl
+          transition-all duration-300 ease-in-out w-80
           overflow-y-auto overflow-x-hidden
-          h-screen fixed right-0 top-0
-          
-        `}
+          h-screen fixed right-0 top-0"
       >
-        {/* زخرفة خلفية */}
-        <div className={`absolute top-0 left-0 w-full h-32 bg-gradient-to-br from-[#1B5E4F]/5 to-transparent pointer-events-none`}></div>
+        {/* Background decorations */}
+        <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-br from-[#1B5E4F]/5 to-transparent pointer-events-none"></div>
         <div className="absolute bottom-0 right-0 w-full h-32 bg-gradient-to-tl from-[#B8976B]/5 to-transparent pointer-events-none"></div>
 
         <div className="flex flex-col min-h-full relative z-10">
           {/* Header */}
-          <div className={`p-6 border-b-2 border-[#B8976B]/20 bg-gradient-to-br from-white to-[#F5F1E8]/30 relative overflow-hidden`}>
+          <div className="p-6 border-b-2 border-[#B8976B]/20 bg-gradient-to-br from-white to-[#F5F1E8]/30 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-20 h-20 border-t-4 border-r-4 border-[#B8976B]/20 rounded-tr-lg"></div>
 
             <div className="flex items-center justify-between relative z-10">
-              <div className="flex items-center gap-3 relative">
-                {/* Logo */}
+              <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg">
-                  <img src={logo} className="overflow-hidden w-full h-full object-cover rounded-full" />
+                  <img
+                    src={logo}
+                    className="overflow-hidden w-full h-full object-cover rounded-full"
+                    alt="Logo"
+                  />
                 </div>
-                
-                {/* النص يظهر فقط عند الفتح */}
-                { 
-                  <div>
-                    <h1 className="text-xl font-bold bg-gradient-to-r from-[#0F4F3E] to-[#1B5E4F] bg-clip-text text-transparent whitespace-nowrap">
-                      استدامة العطاء الدولية
-                    </h1>
-                    <p className="text-xs text-[#4A4A4A] mt-0.5">
-                      لوحة التحكم الشاملة
-                    </p>
-                  </div>
-                }
+                <div>
+                  <h1 className="text-xl font-bold bg-gradient-to-r from-[#0F4F3E] to-[#1B5E4F] bg-clip-text text-transparent whitespace-nowrap">
+                    استدامة العطاء الدولية
+                  </h1>
+                  <p className="text-xs text-[#4A4A4A] mt-0.5">
+                    لوحة التحكم الشاملة
+                  </p>
+                </div>
               </div>
             </div>
 
-            {/* خط ذهبي */}
             <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#B8976B] to-transparent"></div>
           </div>
 
           {/* Navigation */}
           <div className="flex-1 p-4 pb-6">
-            {  (
-              // عرض كامل مع النصوص
-              NAV_CONFIG.map((category) => (
-                <div key={category.id} className="mb-6">
-                  <div className="flex items-center gap-2 mb-3 px-3">
-                    <div className="w-8 h-px bg-gradient-to-r from-[#B8976B] to-transparent"></div>
-                    <h3 className="text-xs font-bold text-[#1B5E4F] uppercase tracking-wider">
-                      {category.title}
-                    </h3>
-                  </div>
-                  <div className="space-y-1">
-                    {category.items.map((item) => (
-                      <NavItem key={item.id} item={item} />
-                    ))}
-                  </div>
+            {NAV_CONFIG.map((category) => (
+              <div key={category.id} className="mb-6">
+                <div className="flex items-center gap-2 mb-3 px-3">
+                  <div className="w-8 h-px bg-gradient-to-r from-[#B8976B] to-transparent"></div>
+                  <h3 className="text-xs font-bold text-[#1B5E4F] uppercase tracking-wider">
+                    {category.title}
+                  </h3>
                 </div>
-              ))
-            )
-          }
-                
-              </div>
-          
-          </div>
-
-          {/* Profile Section - في الأسفل */}
-          <div className={`border-t-2 border-[#B8976B]/20 bg-gradient-to-br from-[#F5F1E8]/50 to-white "p-4"`}>
-            {  (
-              // عرض كامل للبروفايل
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 p-3 bg-white rounded-xl shadow-sm border border-[#B8976B]/10">
-                  {/* صورة المستخدم */}
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#1B5E4F] to-[#0F4F3E] flex items-center justify-center text-white font-bold shadow-md">
-                    {user.avatar ? (
-                      <img src={user.avatar} alt={user.name} className="w-full h-full rounded-full object-cover" />
-                    ) : (
-                      <User size={20} />
-                    )}
-                  </div>
-                  
-                  {/* معلومات المستخدم */}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-[#1B5E4F] truncate">{user.name}</p>
-                    <p className="text-xs text-[#4A4A4A] truncate">{user.email}</p>
-                  </div>
+                <div className="space-y-1">
+                  {category.items.map((item) => (
+                    <NavItem key={item.id} item={item} />
+                  ))}
                 </div>
-
-                {/* زر تسجيل الخروج */}
-                <button
-                  onClick={handleLogout}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl
-                    bg-gradient-to-r from-red-500 to-red-600 text-white
-                    hover:from-red-600 hover:to-red-700
-                    transition-all duration-300 shadow-md hover:shadow-lg
-                    group relative overflow-hidden"
-                >
-                  <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                  <LogOut size={18} className="relative z-10" />
-                  <span className="font-semibold relative z-10">تسجيل الخروج</span>
-                </button>
               </div>
-            ) }
+            ))}
           </div>
         </div>
-      </div>
 
+        {/* Profile Section */}
+        <div className="border-t-2 border-[#B8976B]/20 bg-gradient-to-br from-[#F5F1E8]/50 to-white p-4">
+          {user && (
+            <div className="space-y-3">
+              {/* User Info */}
+              <div className="flex items-center gap-3 p-3 bg-white rounded-xl shadow-sm border border-[#B8976B]/10">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#1B5E4F] to-[#0F4F3E] flex items-center justify-center text-white font-bold shadow-md flex-shrink-0">
+                  {user.avatar ? (
+                    <img
+                      src={user.avatar}
+                      alt={user.fullName}
+                      className="w-full h-full rounded-full object-cover"
+                    />
+                  ) : (
+                    <User size={20} />
+                  )}
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-[#1B5E4F] truncate">
+                    {user.fullName ?? user.email}
+                  </p>
+                  <p className="text-xs text-[#4A4A4A] truncate">
+                    {user.email}
+                  </p>
+                  {user.roles.length > 0 && (
+                    <p className="text-xs text-[#B8976B] truncate mt-0.5">
+                      {user.roles[0]}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Logout Button */}
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl
+                  bg-gradient-to-r from-red-500 to-red-600 text-white
+                  hover:from-red-600 hover:to-red-700
+                  transition-all duration-300 shadow-md hover:shadow-lg
+                  group relative overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <LogOut size={18} className="relative z-10" />
+                <span className="font-semibold relative z-10">
+                  تسجيل الخروج
+                </span>
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 };
 
