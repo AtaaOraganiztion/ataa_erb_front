@@ -1,11 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import {
-  ChevronDown,
-  ChevronRight,
-  LogOut,
-  User,
-} from "lucide-react";
+import { ChevronDown, ChevronRight, LogOut, User } from "lucide-react";
 import { NAV_CONFIG, type SubItem } from "../../lib/utiltis";
 import logo from "../../assets/Logo2.jpg";
 import { useAuth } from "../../context/AuthContext";
@@ -13,9 +8,10 @@ import { useAuth } from "../../context/AuthContext";
 const ModernSidebar = () => {
   const [activePage, setActivePage] = useState("dashboard");
   const navigate = useNavigate();
-  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
+  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>(
+    {},
+  );
   const { user, logout } = useAuth();
-
   const toggleExpanded = (itemId: string) => {
     setExpandedItems((prev) => ({
       ...prev,
@@ -93,7 +89,9 @@ const ModernSidebar = () => {
           </div>
 
           {hasSubItems && (
-            <div className={`transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}>
+            <div
+              className={`transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
+            >
               {isExpanded ? (
                 <ChevronDown
                   size={16}
@@ -230,7 +228,9 @@ const ModernSidebar = () => {
               >
                 <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 <LogOut size={18} className="relative z-10" />
-                <span className="font-semibold relative z-10">تسجيل الخروج</span>
+                <span className="font-semibold relative z-10">
+                  تسجيل الخروج
+                </span>
               </button>
             </div>
           )}
