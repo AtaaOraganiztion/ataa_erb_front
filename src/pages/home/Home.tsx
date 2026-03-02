@@ -11,7 +11,6 @@ import {
   Zap,
   Globe,
   ChevronLeft,
-  CheckCircle2,
   ArrowLeft,
   Star,
   Layers,
@@ -104,50 +103,7 @@ const STATS = [
   { value: "٢٤/٧", label: "دعم فني متواصل" },
 ];
 
-const PLANS = [
-  {
-    name: "الأساسي",
-    price: "٢,٩٩٩",
-    period: "شهرياً",
-    features: [
-      "٥ مستخدمين",
-      "المالية والمحاسبة",
-      "المخزون الأساسي",
-      "تقارير أساسية",
-      "دعم بالبريد",
-    ],
-    cta: "ابدأ الآن",
-    highlight: false,
-  },
-  {
-    name: "الاحترافي",
-    price: "٦,٩٩٩",
-    period: "شهرياً",
-    features: [
-      "٢٥ مستخدماً",
-      "جميع الوحدات",
-      "تقارير متقدمة",
-      "تكامل API",
-      "دعم أولوية ٢٤/٧",
-    ],
-    cta: "الأكثر طلباً",
-    highlight: true,
-  },
-  {
-    name: "المؤسسي",
-    price: "تواصل معنا",
-    period: "",
-    features: [
-      "مستخدمون غير محدودون",
-      "تخصيص كامل",
-      "خادم خاص",
-      "مدير حساب مخصص",
-      "SLA مضمون",
-    ],
-    cta: "اطلب عرضاً",
-    highlight: false,
-  },
-];
+
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -494,7 +450,7 @@ const HomePage = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {FEATURES.map((feat, i) => {
+            {FEATURES.map((feat) => {
               const Icon = feat.icon;
               const isGold = feat.color.includes("B8976B");
               return (
