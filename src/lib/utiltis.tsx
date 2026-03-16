@@ -20,6 +20,9 @@ import type { LucideIcon } from "lucide-react";
 import EmployeesPage from "../pages/HR/Employees/Employees";
 import Dashboard from "../pages/Dashboard";
 import Sectors from "../pages/HR/Employees/Sectors";
+
+import AttendancePage from "../pages/HR/Attendance-salary/Attendance";
+import SalaryPage from "../pages/HR/Attendance-salary/Salary";
 export interface SubItem {
   id: string;
   label: string;
@@ -227,15 +230,16 @@ export const NAV_CONFIG: NavCategory[] = [
             label: "الحضور والانصراف",
             page: "attendance",
             url: "/attendance",
+            component: <AttendancePage />,
           },
+
           {
-            id: "timesheets",
-            label: "جداول الساعات",
-            page: "timesheets",
-            url: "/timesheets",
+            id: "payroll",
+            label: "الرواتب",
+            page: "payroll",
+            url: "/payroll",
+            component: <SalaryPage />,
           },
-          { id: "payroll", label: "الرواتب", page: "payroll", url: "/payroll" },
-          { id: "leaves", label: "الإجازات", page: "leaves", url: "/leaves" },
         ],
       },
       {
