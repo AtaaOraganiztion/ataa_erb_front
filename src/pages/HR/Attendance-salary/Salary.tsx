@@ -2,49 +2,66 @@ import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { LucideIcon } from "lucide-react";
 import {
-  DollarSign, Plus, Search, Filter, Edit, Trash2, X, Loader2,
-  AlertTriangle, CheckCircle, ChevronDown, RefreshCw, TrendingUp,
-  TrendingDown, Award, Clock, User, Calendar, CheckSquare, XSquare,
+  DollarSign,
+  Plus,
+  Search,
+  Filter,
+  Edit,
+  Trash2,
+  X,
+  Loader2,
+  AlertTriangle,
+  CheckCircle,
+  ChevronDown,
+  RefreshCw,
+  TrendingUp,
+  TrendingDown,
+  Award,
+  Clock,
+  User,
+  Calendar,
+  CheckSquare,
+  XSquare,
 } from "lucide-react";
-
+import type { QueryKey } from "@tanstack/react-query";
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface Salary {
-  id:             string;
-  employeeId:     string;
-  baseSalary:     number;
-  allowances:     number;
-  deductions:     number;
+  id: string;
+  employeeId: string;
+  baseSalary: number;
+  allowances: number;
+  deductions: number;
   overtimeAmount: number;
-  bonusAmount:    number;
-  netSalary:      number;
-  hoursWorked:    number;
-  month:          number;
-  year:           number;
-  isConfirmed:    boolean;
+  bonusAmount: number;
+  netSalary: number;
+  hoursWorked: number;
+  month: number;
+  year: number;
+  isConfirmed: boolean;
 }
 
 interface Employee {
-  id:                string;
+  id: string;
   employeeFirstName: string;
-  employeeLastName:  string;
-  jobTitle:          string;
-  sectorId:          string;
+  employeeLastName: string;
+  jobTitle: string;
+  sectorId: string;
 }
 
 /** All numeric fields kept as string|number so inputs stay controlled */
 interface SalaryFormData {
-  employeeId:     string;
-  baseSalary:     number | string;
-  allowances:     number | string;
-  deductions:     number | string;
+  employeeId: string;
+  baseSalary: number | string;
+  allowances: number | string;
+  deductions: number | string;
   overtimeAmount: number | string;
-  bonusAmount:    number | string;
-  netSalary:      number | string;
-  hoursWorked:    number | string;
-  month:          number | string;
-  year:           number | string;
-  isConfirmed:    boolean;
+  bonusAmount: number | string;
+  netSalary: number | string;
+  hoursWorked: number | string;
+  month: number | string;
+  year: number | string;
+  isConfirmed: boolean;
 }
 
 type ModalType = "add" | "edit" | "delete" | null;
@@ -52,102 +69,145 @@ type ModalType = "add" | "edit" | "delete" | null;
 // ─── Field descriptor used in the form + card ────────────────────────────────
 
 interface SalaryField {
-  k:     keyof SalaryFormData;
+  k: keyof SalaryFormData;
   label: string;
-  icon:  LucideIcon;
+  icon: LucideIcon;
   color: string;
 }
 
 interface SalaryRowField {
   label: string;
   value: number;
-  icon:  LucideIcon;
-  cls:   string;
+  icon: LucideIcon;
+  cls: string;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const CURRENT_MONTH = new Date().getMonth() + 1;
-const CURRENT_YEAR  = new Date().getFullYear();
+const CURRENT_YEAR = new Date().getFullYear();
 
 const EMPTY_FORM: SalaryFormData = {
-  employeeId:     "",
-  baseSalary:     "",
-  allowances:     0,
-  deductions:     0,
+  employeeId: "",
+  baseSalary: "",
+  allowances: 0,
+  deductions: 0,
   overtimeAmount: 0,
-  bonusAmount:    0,
-  netSalary:      0,
-  hoursWorked:    0,
-  month:          CURRENT_MONTH,
-  year:           CURRENT_YEAR,
-  isConfirmed:    false,
+  bonusAmount: 0,
+  netSalary: 0,
+  hoursWorked: 0,
+  month: CURRENT_MONTH,
+  year: CURRENT_YEAR,
+  isConfirmed: false,
 };
 
 const MONTHS: string[] = [
-  "يناير","فبراير","مارس","أبريل","مايو","يونيو",
-  "يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر",
+  "يناير",
+  "فبراير",
+  "مارس",
+  "أبريل",
+  "مايو",
+  "يونيو",
+  "يوليو",
+  "أغسطس",
+  "سبتمبر",
+  "أكتوبر",
+  "نوفمبر",
+  "ديسمبر",
 ];
 
 const FORM_FIELDS: SalaryField[] = [
-  { k: "baseSalary",     label: "الراتب الأساسي", icon: DollarSign,   color: "text-gray-500"    },
-  { k: "allowances",     label: "البدلات",        icon: TrendingUp,   color: "text-emerald-500" },
-  { k: "overtimeAmount", label: "ساعات إضافية",   icon: Clock,        color: "text-blue-500"    },
-  { k: "bonusAmount",    label: "المكافأة",        icon: Award,        color: "text-purple-500"  },
-  { k: "deductions",     label: "الخصومات",       icon: TrendingDown, color: "text-red-400"     },
-  { k: "hoursWorked",    label: "ساعات العمل",    icon: Clock,        color: "text-[#B8976B]"   },
+  {
+    k: "baseSalary",
+    label: "الراتب الأساسي",
+    icon: DollarSign,
+    color: "text-gray-500",
+  },
+  {
+    k: "allowances",
+    label: "البدلات",
+    icon: TrendingUp,
+    color: "text-emerald-500",
+  },
+  {
+    k: "overtimeAmount",
+    label: "ساعات إضافية",
+    icon: Clock,
+    color: "text-blue-500",
+  },
+  {
+    k: "bonusAmount",
+    label: "المكافأة",
+    icon: Award,
+    color: "text-purple-500",
+  },
+  {
+    k: "deductions",
+    label: "الخصومات",
+    icon: TrendingDown,
+    color: "text-red-400",
+  },
+  {
+    k: "hoursWorked",
+    label: "ساعات العمل",
+    icon: Clock,
+    color: "text-[#B8976B]",
+  },
 ];
 
-const API_BASE  = import.meta.env.VITE_API_URL as string;
+const API_BASE = import.meta.env.VITE_API_URL as string;
 const QUERY_KEY = ["salaries"] as const;
 
 // ─── Pure helpers ─────────────────────────────────────────────────────────────
 
 const calcNet = (f: SalaryFormData): number =>
-  Number(f.baseSalary) + Number(f.allowances) +
-  Number(f.overtimeAmount) + Number(f.bonusAmount) - Number(f.deductions);
+  Number(f.baseSalary) +
+  Number(f.allowances) +
+  Number(f.overtimeAmount) +
+  Number(f.bonusAmount) -
+  Number(f.deductions);
 
 const toFormData = (s: Salary): SalaryFormData => ({
-  employeeId:     s.employeeId,
-  baseSalary:     s.baseSalary,
-  allowances:     s.allowances,
-  deductions:     s.deductions,
+  employeeId: s.employeeId,
+  baseSalary: s.baseSalary,
+  allowances: s.allowances,
+  deductions: s.deductions,
   overtimeAmount: s.overtimeAmount,
-  bonusAmount:    s.bonusAmount,
-  netSalary:      s.netSalary,
-  hoursWorked:    s.hoursWorked,
-  month:          s.month,
-  year:           s.year,
-  isConfirmed:    s.isConfirmed,
+  bonusAmount: s.bonusAmount,
+  netSalary: s.netSalary,
+  hoursWorked: s.hoursWorked,
+  month: s.month,
+  year: s.year,
+  isConfirmed: s.isConfirmed,
 });
 
 /** POST body – includes employeeId */
 const toAddBody = (d: SalaryFormData) => ({
-  employeeId:     d.employeeId,
-  baseSalary:     Number(d.baseSalary),
-  allowances:     Number(d.allowances),
-  deductions:     Number(d.deductions),
+  employeeId: d.employeeId,
+  baseSalary: Number(d.baseSalary),
+  allowances: Number(d.allowances),
+  deductions: Number(d.deductions),
   overtimeAmount: Number(d.overtimeAmount),
-  bonusAmount:    Number(d.bonusAmount),
-  netSalary:      calcNet(d),
-  hoursWorked:    Number(d.hoursWorked),
-  month:          Number(d.month),
-  year:           Number(d.year),
-  isConfirmed:    d.isConfirmed,
+  bonusAmount: Number(d.bonusAmount),
+  netSalary: calcNet(d),
+  hoursWorked: Number(d.hoursWorked),
+  month: Number(d.month),
+  year: Number(d.year),
+  isConfirmed: d.isConfirmed,
 });
 
 /** PUT body – no employeeId per API spec */
 const toPutBody = (d: SalaryFormData) => ({
-  baseSalary:     Number(d.baseSalary),
-  allowances:     Number(d.allowances),
-  deductions:     Number(d.deductions),
+  baseSalary: Number(d.baseSalary),
+  allowances: Number(d.allowances),
+  deductions: Number(d.deductions),
   overtimeAmount: Number(d.overtimeAmount),
-  bonusAmount:    Number(d.bonusAmount),
-  netSalary:      calcNet(d),
-  hoursWorked:    Number(d.hoursWorked),
-  month:          Number(d.month),
-  year:           Number(d.year),
-  isConfirmed:    d.isConfirmed,
+  bonusAmount: Number(d.bonusAmount),
+  netSalary: calcNet(d),
+  hoursWorked: Number(d.hoursWorked),
+  month: Number(d.month),
+  year: Number(d.year),
+  isConfirmed: d.isConfirmed,
 });
 
 const normalize = <T,>(raw: unknown): T[] =>
@@ -157,7 +217,10 @@ const normalize = <T,>(raw: unknown): T[] =>
 
 // ─── API ──────────────────────────────────────────────────────────────────────
 
-const authFetch = async (url: string, options: RequestInit = {}): Promise<any> => {
+const authFetch = async (
+  url: string,
+  options: RequestInit = {},
+): Promise<any> => {
   const token = localStorage.getItem("accessToken") ?? "";
   const res = await fetch(url, {
     ...options,
@@ -188,13 +251,19 @@ const fetchEmployees = (): Promise<unknown> =>
 const apiAdd = (data: SalaryFormData): Promise<unknown> =>
   authFetch(`${API_BASE}/Api/V1/Salary/Add`, {
     method: "POST",
-    body:   JSON.stringify(toAddBody(data)),
+    body: JSON.stringify(toAddBody(data)),
   });
 
-const apiUpdate = ({ id, data }: { id: string; data: SalaryFormData }): Promise<unknown> =>
+const apiUpdate = ({
+  id,
+  data,
+}: {
+  id: string;
+  data: SalaryFormData;
+}): Promise<unknown> =>
   authFetch(`${API_BASE}/Api/V1/Salary/${id}`, {
     method: "PUT",
-    body:   JSON.stringify(toPutBody(data)),
+    body: JSON.stringify(toPutBody(data)),
   });
 
 const apiDelete = (id: string): Promise<unknown> =>
@@ -203,45 +272,66 @@ const apiDelete = (id: string): Promise<unknown> =>
 // ─── Salary Form Modal ────────────────────────────────────────────────────────
 
 interface SalaryModalProps {
-  mode:      "add" | "edit";
-  initial:   SalaryFormData;
+  mode: "add" | "edit";
+  initial: SalaryFormData;
   employees: Employee[];
-  empName?:  string;
-  saving:    boolean;
-  error?:    string | null;
-  onSave:    (d: SalaryFormData) => void;
-  onClose:   () => void;
+  empName?: string;
+  saving: boolean;
+  error?: string | null;
+  onSave: (d: SalaryFormData) => void;
+  onClose: () => void;
 }
 
 const SalaryModal = ({
-  mode, initial, employees, empName, saving, error, onSave, onClose,
+  mode,
+  initial,
+  employees,
+  empName,
+  saving,
+  error,
+  onSave,
+  onClose,
 }: SalaryModalProps) => {
   const [form, setForm] = useState<SalaryFormData>({ ...initial });
 
   const set = (k: keyof SalaryFormData, v: string | number | boolean) => {
-    setForm(prev => {
+    setForm((prev) => {
       const next: SalaryFormData = { ...prev, [k]: v };
-      if (["baseSalary","allowances","deductions","overtimeAmount","bonusAmount"].includes(k)) {
+      if (
+        [
+          "baseSalary",
+          "allowances",
+          "deductions",
+          "overtimeAmount",
+          "bonusAmount",
+        ].includes(k)
+      ) {
         next.netSalary = calcNet(next);
       }
       return next;
     });
   };
 
-  const selectedEmp = employees.find(e => e.id === form.employeeId);
-  const net         = Number(form.netSalary);
+  const selectedEmp = employees.find((e) => e.id === form.employeeId);
+  const net = Number(form.netSalary);
 
   const inputCls =
     "w-full px-4 py-2.5 border-2 border-[#B8976B]/25 rounded-xl bg-white " +
     "focus:border-[#1B5E4F] focus:ring-2 focus:ring-[#1B5E4F]/10 outline-none " +
     "transition-all text-[#1B5E4F] placeholder:text-gray-300 text-sm";
-  const labelCls = "block text-[10px] font-bold text-[#1B5E4F]/60 mb-1.5 uppercase tracking-widest";
+  const labelCls =
+    "block text-[10px] font-bold text-[#1B5E4F]/60 mb-1.5 uppercase tracking-widest";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" dir="rtl">
-      <div className="absolute inset-0 bg-black/45 backdrop-blur-sm" onClick={onClose} />
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      dir="rtl"
+    >
+      <div
+        className="absolute inset-0 bg-black/45 backdrop-blur-sm"
+        onClick={onClose}
+      />
       <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
-
         {/* Header */}
         <div className="bg-gradient-to-l from-[#1B5E4F] to-[#0F4F3E] px-8 py-6 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
@@ -255,11 +345,16 @@ const SalaryModal = ({
               <p className="text-white/50 text-xs mt-0.5">
                 {mode === "edit" && empName
                   ? empName
-                  : mode === "add" ? "أدخل تفاصيل الراتب" : "تحديث مكونات الراتب"}
+                  : mode === "add"
+                    ? "أدخل تفاصيل الراتب"
+                    : "تحديث مكونات الراتب"}
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-xl transition-all">
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-white/10 rounded-xl transition-all"
+          >
             <X className="text-white/70" size={18} />
           </button>
         </div>
@@ -276,7 +371,8 @@ const SalaryModal = ({
           {/* Employee + Period */}
           <section>
             <h3 className="text-xs font-bold text-[#B8976B] uppercase tracking-widest mb-4 flex items-center gap-2">
-              <span className="w-4 h-px bg-[#B8976B]" />بيانات الموظف والفترة
+              <span className="w-4 h-px bg-[#B8976B]" />
+              بيانات الموظف والفترة
             </h3>
             <div className="grid grid-cols-2 gap-4">
               {mode === "add" && (
@@ -286,23 +382,31 @@ const SalaryModal = ({
                     <select
                       className={`${inputCls} appearance-none pl-8`}
                       value={form.employeeId}
-                      onChange={e => set("employeeId", e.target.value)}
+                      onChange={(e) => set("employeeId", e.target.value)}
                     >
                       <option value="">-- اختر الموظف --</option>
-                      {employees.map(e => (
+                      {employees.map((e) => (
                         <option key={e.id} value={e.id}>
-                          {e.employeeFirstName} {e.employeeLastName} — {e.jobTitle}
+                          {e.employeeFirstName} {e.employeeLastName} —{" "}
+                          {e.jobTitle}
                         </option>
                       ))}
                     </select>
-                    <ChevronDown size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#B8976B] pointer-events-none" />
-                    <User      size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#B8976B]/40 pointer-events-none" />
+                    <ChevronDown
+                      size={14}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-[#B8976B] pointer-events-none"
+                    />
+                    <User
+                      size={14}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-[#B8976B]/40 pointer-events-none"
+                    />
                   </div>
                   {selectedEmp && (
                     <p className="text-xs text-[#1B5E4F]/50 mt-1.5 flex items-center gap-1">
                       <User size={11} />
                       <span className="font-bold text-[#1B5E4F]/70">
-                        {selectedEmp.employeeFirstName} {selectedEmp.employeeLastName}
+                        {selectedEmp.employeeFirstName}{" "}
+                        {selectedEmp.employeeLastName}
                       </span>
                     </p>
                   )}
@@ -315,13 +419,18 @@ const SalaryModal = ({
                   <select
                     className={`${inputCls} appearance-none`}
                     value={Number(form.month)}
-                    onChange={e => set("month", Number(e.target.value))}
+                    onChange={(e) => set("month", Number(e.target.value))}
                   >
                     {MONTHS.map((m, i) => (
-                      <option key={i + 1} value={i + 1}>{m}</option>
+                      <option key={i + 1} value={i + 1}>
+                        {m}
+                      </option>
                     ))}
                   </select>
-                  <ChevronDown size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#B8976B] pointer-events-none" />
+                  <ChevronDown
+                    size={14}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-[#B8976B] pointer-events-none"
+                  />
                 </div>
               </div>
 
@@ -334,7 +443,7 @@ const SalaryModal = ({
                   value={form.year}
                   min={2000}
                   max={2100}
-                  onChange={e => set("year", e.target.value)}
+                  onChange={(e) => set("year", e.target.value)}
                   placeholder={String(CURRENT_YEAR)}
                 />
               </div>
@@ -344,7 +453,8 @@ const SalaryModal = ({
           {/* Salary Components */}
           <section>
             <h3 className="text-xs font-bold text-[#B8976B] uppercase tracking-widest mb-4 flex items-center gap-2">
-              <span className="w-4 h-px bg-[#B8976B]" />مكونات الراتب (ريال)
+              <span className="w-4 h-px bg-[#B8976B]" />
+              مكونات الراتب (ريال)
             </h3>
             <div className="grid grid-cols-2 gap-4">
               {FORM_FIELDS.map(({ k, label, icon: Icon, color }) => (
@@ -357,9 +467,12 @@ const SalaryModal = ({
                       dir="ltr"
                       min={0}
                       value={form[k] as string | number}
-                      onChange={e => set(k, e.target.value)}
+                      onChange={(e) => set(k, e.target.value)}
                     />
-                    <Icon size={13} className={`absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none ${color}`} />
+                    <Icon
+                      size={13}
+                      className={`absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none ${color}`}
+                    />
                   </div>
                 </div>
               ))}
@@ -367,18 +480,25 @@ const SalaryModal = ({
           </section>
 
           {/* Net Salary */}
-          <div className={`p-5 rounded-2xl border-2 ${net >= 0 ? "bg-emerald-50 border-emerald-200" : "bg-red-50 border-red-200"}`}>
+          <div
+            className={`p-5 rounded-2xl border-2 ${net >= 0 ? "bg-emerald-50 border-emerald-200" : "bg-red-50 border-red-200"}`}
+          >
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-1">
                   صافي الراتب (محسوب تلقائياً)
                 </p>
-                <p className={`text-2xl font-bold ${net >= 0 ? "text-emerald-700" : "text-red-600"}`}>
+                <p
+                  className={`text-2xl font-bold ${net >= 0 ? "text-emerald-700" : "text-red-600"}`}
+                >
                   {net.toLocaleString("ar-SA")} ريال
                 </p>
               </div>
               <div className="w-12 h-12 rounded-2xl bg-white/60 flex items-center justify-center">
-                <DollarSign size={22} className={net >= 0 ? "text-emerald-600" : "text-red-500"} />
+                <DollarSign
+                  size={22}
+                  className={net >= 0 ? "text-emerald-600" : "text-red-500"}
+                />
               </div>
             </div>
           </div>
@@ -386,8 +506,12 @@ const SalaryModal = ({
           {/* Confirmation Toggle */}
           <div className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100">
             <div>
-              <p className="text-sm font-semibold text-[#1B5E4F]">تأكيد الراتب</p>
-              <p className="text-xs text-gray-400 mt-0.5">الراتب المؤكد لا يمكن تعديله لاحقاً</p>
+              <p className="text-sm font-semibold text-[#1B5E4F]">
+                تأكيد الراتب
+              </p>
+              <p className="text-xs text-gray-400 mt-0.5">
+                الراتب المؤكد لا يمكن تعديله لاحقاً
+              </p>
             </div>
             <button
               type="button"
@@ -418,7 +542,11 @@ const SalaryModal = ({
             disabled={saving || (mode === "add" && !form.employeeId)}
             className="px-6 py-2.5 rounded-xl bg-gradient-to-l from-[#1B5E4F] to-[#0F4F3E] text-white font-semibold text-sm flex items-center gap-2 hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {saving ? <Loader2 size={15} className="animate-spin" /> : <CheckCircle size={15} />}
+            {saving ? (
+              <Loader2 size={15} className="animate-spin" />
+            ) : (
+              <CheckCircle size={15} />
+            )}
             {mode === "add" ? "إضافة الراتب" : "حفظ التعديلات"}
           </button>
         </div>
@@ -430,17 +558,30 @@ const SalaryModal = ({
 // ─── Delete Modal ─────────────────────────────────────────────────────────────
 
 interface DeleteModalProps {
-  empName:   string;
-  month:     number;
-  year:      number;
-  deleting:  boolean;
+  empName: string;
+  month: number;
+  year: number;
+  deleting: boolean;
   onConfirm: () => void;
-  onClose:   () => void;
+  onClose: () => void;
 }
 
-const DeleteModal = ({ empName, month, year, deleting, onConfirm, onClose }: DeleteModalProps) => (
-  <div className="fixed inset-0 z-50 flex items-center justify-center p-4" dir="rtl">
-    <div className="absolute inset-0 bg-black/45 backdrop-blur-sm" onClick={onClose} />
+const DeleteModal = ({
+  empName,
+  month,
+  year,
+  deleting,
+  onConfirm,
+  onClose,
+}: DeleteModalProps) => (
+  <div
+    className="fixed inset-0 z-50 flex items-center justify-center p-4"
+    dir="rtl"
+  >
+    <div
+      className="absolute inset-0 bg-black/45 backdrop-blur-sm"
+      onClick={onClose}
+    />
     <div className="relative w-full max-w-sm bg-white rounded-3xl shadow-2xl p-8 text-center">
       <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-red-50 flex items-center justify-center">
         <AlertTriangle className="text-red-500" size={28} />
@@ -450,9 +591,15 @@ const DeleteModal = ({ empName, month, year, deleting, onConfirm, onClose }: Del
         هل أنت متأكد من حذف راتب{" "}
         <span className="font-bold text-red-600">{empName}</span>
         <br />
-        لشهر <span className="font-bold">{MONTHS[month - 1]} {year}</span>؟
+        لشهر{" "}
+        <span className="font-bold">
+          {MONTHS[month - 1]} {year}
+        </span>
+        ؟
         <br />
-        <span className="text-xs text-gray-400">هذا الإجراء لا يمكن التراجع عنه.</span>
+        <span className="text-xs text-gray-400">
+          هذا الإجراء لا يمكن التراجع عنه.
+        </span>
       </p>
       <div className="flex gap-3">
         <button
@@ -466,7 +613,11 @@ const DeleteModal = ({ empName, month, year, deleting, onConfirm, onClose }: Del
           disabled={deleting}
           className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-60 transition-all"
         >
-          {deleting ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}
+          {deleting ? (
+            <Loader2 size={15} className="animate-spin" />
+          ) : (
+            <Trash2 size={15} />
+          )}
           حذف
         </button>
       </div>
@@ -477,24 +628,24 @@ const DeleteModal = ({ empName, month, year, deleting, onConfirm, onClose }: Del
 // ─── Salary Card ──────────────────────────────────────────────────────────────
 
 interface SalaryCardProps {
-  salary:   Salary;
-  empName:  string;
-  onEdit:   () => void;
+  salary: Salary;
+  empName: string;
+  onEdit: () => void;
   onDelete: () => void;
 }
 
 const CARD_ROWS: Omit<SalaryRowField, "value">[] = [
-  { label: "الأساسي", icon: DollarSign,   cls: "text-gray-600"    },
-  { label: "البدلات", icon: TrendingUp,   cls: "text-emerald-600" },
-  { label: "إضافي",  icon: Clock,        cls: "text-blue-600"    },
-  { label: "مكافأة", icon: Award,        cls: "text-purple-600"  },
-  { label: "خصومات", icon: TrendingDown, cls: "text-red-500"     },
+  { label: "الأساسي", icon: DollarSign, cls: "text-gray-600" },
+  { label: "البدلات", icon: TrendingUp, cls: "text-emerald-600" },
+  { label: "إضافي", icon: Clock, cls: "text-blue-600" },
+  { label: "مكافأة", icon: Award, cls: "text-purple-600" },
+  { label: "خصومات", icon: TrendingDown, cls: "text-red-500" },
 ];
 
 const SalaryCard = ({ salary, empName, onEdit, onDelete }: SalaryCardProps) => {
   const initials = empName
     .split(" ")
-    .map(n => n[0] ?? "")
+    .map((n) => n[0] ?? "")
     .join("")
     .slice(0, 2)
     .toUpperCase();
@@ -509,10 +660,13 @@ const SalaryCard = ({ salary, empName, onEdit, onDelete }: SalaryCardProps) => {
 
   return (
     <div className="bg-white rounded-2xl border border-[#B8976B]/15 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 overflow-hidden">
-      <div className={`h-1 w-full ${salary.isConfirmed
-        ? "bg-gradient-to-l from-emerald-500 to-emerald-600"
-        : "bg-gradient-to-l from-[#B8976B] to-[#9A7D5B]"
-      }`} />
+      <div
+        className={`h-1 w-full ${
+          salary.isConfirmed
+            ? "bg-gradient-to-l from-emerald-500 to-emerald-600"
+            : "bg-gradient-to-l from-[#B8976B] to-[#9A7D5B]"
+        }`}
+      />
 
       <div className="p-5">
         {/* Head */}
@@ -522,28 +676,45 @@ const SalaryCard = ({ salary, empName, onEdit, onDelete }: SalaryCardProps) => {
               {initials}
             </div>
             <div className="min-w-0">
-              <p className="font-bold text-[#1B5E4F] text-sm truncate">{empName}</p>
-              <p className="text-xs text-gray-400">{MONTHS[salary.month - 1]} {salary.year}</p>
+              <p className="font-bold text-[#1B5E4F] text-sm truncate">
+                {empName}
+              </p>
+              <p className="text-xs text-gray-400">
+                {MONTHS[salary.month - 1]} {salary.year}
+              </p>
             </div>
           </div>
-          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold border shrink-0 ${
-            salary.isConfirmed
-              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-              : "bg-amber-50 text-amber-700 border-amber-200"
-          }`}>
-            {salary.isConfirmed
-              ? <><CheckSquare size={10} />مؤكد</>
-              : <><XSquare    size={10} />غير مؤكد</>
-            }
+          <span
+            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold border shrink-0 ${
+              salary.isConfirmed
+                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                : "bg-amber-50 text-amber-700 border-amber-200"
+            }`}
+          >
+            {salary.isConfirmed ? (
+              <>
+                <CheckSquare size={10} />
+                مؤكد
+              </>
+            ) : (
+              <>
+                <XSquare size={10} />
+                غير مؤكد
+              </>
+            )}
           </span>
         </div>
 
         {/* Net salary */}
         <div className="bg-[#F5F1E8]/60 rounded-xl p-3 mb-4 text-center">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-[#B8976B] mb-1">صافي الراتب</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-[#B8976B] mb-1">
+            صافي الراتب
+          </p>
           <p className="text-2xl font-bold text-[#1B5E4F]">
             {salary.netSalary.toLocaleString("ar-SA")}
-            <span className="text-sm font-semibold text-gray-400 mr-1">ريال</span>
+            <span className="text-sm font-semibold text-gray-400 mr-1">
+              ريال
+            </span>
           </p>
         </div>
 
@@ -570,7 +741,8 @@ const SalaryCard = ({ salary, empName, onEdit, onDelete }: SalaryCardProps) => {
             onClick={onEdit}
             className="flex-1 py-2 rounded-xl border-2 border-[#1B5E4F]/15 text-[#1B5E4F] text-xs font-semibold hover:bg-[#F5F1E8] transition-all flex items-center justify-center gap-1.5"
           >
-            <Edit size={12} />تعديل
+            <Edit size={12} />
+            تعديل
           </button>
           <button
             onClick={onDelete}
@@ -589,7 +761,7 @@ const SalaryCard = ({ salary, empName, onEdit, onDelete }: SalaryCardProps) => {
 interface StatCard {
   label: string;
   value: string | number;
-  icon:  LucideIcon;
+  icon: LucideIcon;
   color: string;
 }
 
@@ -597,40 +769,45 @@ export default function SalaryPage() {
   const qc = useQueryClient();
 
   const [filterMonth, setFilterMonth] = useState<string>("");
-  const [filterYear,  setFilterYear]  = useState<string>("");
-  const [filterConf,  setFilterConf]  = useState<string>("");
+  const [filterYear, setFilterYear] = useState<string>("");
+  const [filterConf, setFilterConf] = useState<string>("");
   const [showFilters, setShowFilters] = useState(false);
-  const [search,      setSearch]      = useState("");
-  const [modal,       setModal]       = useState<ModalType>(null);
-  const [selected,    setSelected]    = useState<Salary | null>(null);
-  const [formError,   setFormError]   = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [modal, setModal] = useState<ModalType>(null);
+  const [selected, setSelected] = useState<Salary | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const serverParams = useMemo<Record<string, string>>(() => {
     const p: Record<string, string> = {};
-    if (filterMonth) p.Month       = filterMonth;
-    if (filterYear)  p.Year        = filterYear;
-    if (filterConf)  p.IsConfirmed = filterConf;
+    if (filterMonth) p.Month = filterMonth;
+    if (filterYear) p.Year = filterYear;
+    if (filterConf) p.IsConfirmed = filterConf;
     return p;
   }, [filterMonth, filterYear, filterConf]);
 
   // ── Queries
-  const { data: rawSal, isLoading, isError, error } = useQuery({
+  const {
+    data: rawSal,
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
     queryKey: [...QUERY_KEY, serverParams],
-    queryFn:  () => fetchSalaries(serverParams),
+    queryFn: () => fetchSalaries(serverParams),
     staleTime: 30_000,
   });
 
   const { data: rawEmp } = useQuery({
     queryKey: ["employees-all"],
-    queryFn:  fetchEmployees,
+    queryFn: fetchEmployees,
     staleTime: 60_000,
   });
 
-  const salaries:  Salary[]   = normalize<Salary>(rawSal);
+  const salaries: Salary[] = normalize<Salary>(rawSal);
   const employees: Employee[] = normalize<Employee>(rawEmp);
 
   const empMap = useMemo(
-    () => new Map(employees.map(e => [e.id, e])),
+    () => new Map(employees.map((e) => [e.id, e])),
     [employees],
   );
 
@@ -640,31 +817,69 @@ export default function SalaryPage() {
   };
 
   const displayed = useMemo(
-    () => search
-      ? salaries.filter(s =>
-          getEmpName(s.employeeId).toLowerCase().includes(search.toLowerCase()),
-        )
-      : salaries,
+    () =>
+      search
+        ? salaries.filter((s) =>
+            getEmpName(s.employeeId)
+              .toLowerCase()
+              .includes(search.toLowerCase()),
+          )
+        : salaries,
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [salaries, search, empMap],
   );
 
-  const totalNet  = salaries.reduce((a, s) => a + s.netSalary,  0);
+  const totalNet = salaries.reduce((a, s) => a + s.netSalary, 0);
   const totalBase = salaries.reduce((a, s) => a + s.baseSalary, 0);
-  const confirmed = salaries.filter(s => s.isConfirmed).length;
+  const confirmed = salaries.filter((s) => s.isConfirmed).length;
 
   const statCards: StatCard[] = [
-    { label: "إجمالي صافي الرواتب", value: `${totalNet.toLocaleString("ar-SA")} ﷼`,  icon: DollarSign,  color: "from-[#1B5E4F] to-[#0F4F3E]"   },
-    { label: "إجمالي الأساسي",       value: `${totalBase.toLocaleString("ar-SA")} ﷼`, icon: TrendingUp,  color: "from-[#B8976B] to-[#9A7D5B]"    },
-    { label: "سجلات مؤكدة",         value: confirmed,                                  icon: CheckSquare, color: "from-emerald-500 to-emerald-600" },
-    { label: "إجمالي السجلات",       value: salaries.length,                           icon: Calendar,    color: "from-[#4A4A4A] to-[#2A2A2A]"    },
+    {
+      label: "إجمالي صافي الرواتب",
+      value: `${totalNet.toLocaleString("ar-SA")} ﷼`,
+      icon: DollarSign,
+      color: "from-[#1B5E4F] to-[#0F4F3E]",
+    },
+    {
+      label: "إجمالي الأساسي",
+      value: `${totalBase.toLocaleString("ar-SA")} ﷼`,
+      icon: TrendingUp,
+      color: "from-[#B8976B] to-[#9A7D5B]",
+    },
+    {
+      label: "سجلات مؤكدة",
+      value: confirmed,
+      icon: CheckSquare,
+      color: "from-emerald-500 to-emerald-600",
+    },
+    {
+      label: "إجمالي السجلات",
+      value: salaries.length,
+      icon: Calendar,
+      color: "from-[#4A4A4A] to-[#2A2A2A]",
+    },
   ];
 
   // ── Modal helpers
-  const closeModal  = () => { setModal(null); setSelected(null); setFormError(null); };
-  const openAdd     = () => { setSelected(null); setFormError(null); setModal("add");    };
-  const openEdit    = (s: Salary)  => { setSelected(s);    setFormError(null); setModal("edit");   };
-  const openDelete  = (s: Salary)  => { setSelected(s);                        setModal("delete"); };
+  const closeModal = () => {
+    setModal(null);
+    setSelected(null);
+    setFormError(null);
+  };
+  const openAdd = () => {
+    setSelected(null);
+    setFormError(null);
+    setModal("add");
+  };
+  const openEdit = (s: Salary) => {
+    setSelected(s);
+    setFormError(null);
+    setModal("edit");
+  };
+  const openDelete = (s: Salary) => {
+    setSelected(s);
+    setModal("delete");
+  };
 
   // ── Optimistic ADD
   const addMutation = useMutation({
@@ -674,13 +889,17 @@ export default function SalaryPage() {
       const prev = qc.getQueriesData({ queryKey: QUERY_KEY });
       const temp: Salary = { id: `temp-${Date.now()}`, ...toAddBody(data) };
       qc.setQueriesData({ queryKey: QUERY_KEY }, (old: unknown) => [
-        ...normalize<Salary>(old), temp,
+        ...normalize<Salary>(old),
+        temp,
       ]);
       closeModal();
       return { prev };
     },
     onError: (e: Error, _v, ctx) => {
-      if (ctx?.prev) ctx.prev.forEach(([key, val]: [unknown, unknown]) => qc.setQueryData(key, val));
+      if (ctx?.prev)
+        ctx?.prev.forEach(([key, val]: [QueryKey, unknown]) =>
+          qc.setQueryData(key, val),
+        );
       setFormError(e.message);
       setModal("add");
     },
@@ -694,15 +913,20 @@ export default function SalaryPage() {
       await qc.cancelQueries({ queryKey: QUERY_KEY });
       const prev = qc.getQueriesData({ queryKey: QUERY_KEY });
       qc.setQueriesData({ queryKey: QUERY_KEY }, (old: unknown) =>
-        normalize<Salary>(old).map(s => s.id === id ? { ...s, ...toPutBody(data) } : s),
+        normalize<Salary>(old).map((s) =>
+          s.id === id ? { ...s, ...toPutBody(data) } : s,
+        ),
       );
       closeModal();
       return { prev };
     },
     onError: (e: Error, vars, ctx) => {
-      if (ctx?.prev) ctx.prev.forEach(([key, val]: [unknown, unknown]) => qc.setQueryData(key, val));
+      if (ctx?.prev)
+        ctx?.prev.forEach(([key, val]: [QueryKey, unknown]) =>
+          qc.setQueryData(key, val),
+        );
       setFormError(e.message);
-      setSelected(salaries.find(s => s.id === vars.id) ?? null);
+      setSelected(salaries.find((s) => s.id === vars.id) ?? null);
       setModal("edit");
     },
     onSettled: () => qc.invalidateQueries({ queryKey: QUERY_KEY }),
@@ -715,35 +939,40 @@ export default function SalaryPage() {
       await qc.cancelQueries({ queryKey: QUERY_KEY });
       const prev = qc.getQueriesData({ queryKey: QUERY_KEY });
       qc.setQueriesData({ queryKey: QUERY_KEY }, (old: unknown) =>
-        normalize<Salary>(old).filter(s => s.id !== id),
+        normalize<Salary>(old).filter((s) => s.id !== id),
       );
       closeModal();
       return { prev };
     },
     onError: (_e, _v, ctx) => {
-      if (ctx?.prev) ctx.prev.forEach(([key, val]: [unknown, unknown]) => qc.setQueryData(key, val));
+      if (ctx?.prev)
+        ctx?.prev.forEach(([key, val]: [QueryKey, unknown]) =>
+          qc.setQueryData(key, val),
+        );
     },
     onSettled: () => qc.invalidateQueries({ queryKey: QUERY_KEY }),
   });
 
   const handleSave = (data: SalaryFormData) => {
     setFormError(null);
-    if (modal === "add")                   addMutation.mutate(data);
-    else if (modal === "edit" && selected) editMutation.mutate({ id: selected.id, data });
+    if (modal === "add") addMutation.mutate(data);
+    else if (modal === "edit" && selected)
+      editMutation.mutate({ id: selected.id, data });
   };
 
   // ── Render
   return (
     <div className="min-h-screen" dir="rtl">
       <div className="max-w-7xl mx-auto space-y-6">
-
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold bg-gradient-to-l from-[#1B5E4F] to-[#0F4F3E] bg-clip-text text-transparent">
               إدارة الرواتب
             </h1>
-            <p className="text-gray-400 text-sm mt-1">متابعة رواتب وحوافز الموظفين</p>
+            <p className="text-gray-400 text-sm mt-1">
+              متابعة رواتب وحوافز الموظفين
+            </p>
           </div>
           <div className="flex gap-3">
             <button
@@ -757,7 +986,8 @@ export default function SalaryPage() {
               onClick={openAdd}
               className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-l from-[#1B5E4F] to-[#0F4F3E] text-white rounded-2xl font-semibold shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all text-sm"
             >
-              <Plus size={17} />إضافة راتب
+              <Plus size={17} />
+              إضافة راتب
             </button>
           </div>
         </div>
@@ -766,12 +996,19 @@ export default function SalaryPage() {
         {!isLoading && !isError && (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {statCards.map(({ label, value, icon: Icon, color }) => (
-              <div key={label} className="bg-white rounded-2xl border border-[#B8976B]/10 p-4 flex items-center gap-3 shadow-sm">
-                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center shrink-0`}>
+              <div
+                key={label}
+                className="bg-white rounded-2xl border border-[#B8976B]/10 p-4 flex items-center gap-3 shadow-sm"
+              >
+                <div
+                  className={`w-10 h-10 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center shrink-0`}
+                >
                   <Icon size={17} className="text-white" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-bold text-[#1B5E4F] truncate">{String(value)}</p>
+                  <p className="text-sm font-bold text-[#1B5E4F] truncate">
+                    {String(value)}
+                  </p>
                   <p className="text-xs text-gray-400">{label}</p>
                 </div>
               </div>
@@ -783,52 +1020,65 @@ export default function SalaryPage() {
         <div className="bg-white rounded-2xl shadow-sm border border-[#B8976B]/10 p-5">
           <div className="flex gap-3 flex-wrap">
             <div className="flex-1 min-w-[200px] relative">
-              <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-[#B8976B]" size={16} />
+              <Search
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-[#B8976B]"
+                size={16}
+              />
               <input
                 type="text"
                 placeholder="بحث باسم الموظف..."
                 value={search}
-                onChange={e => setSearch(e.target.value)}
+                onChange={(e) => setSearch(e.target.value)}
                 className="w-full pr-11 pl-4 py-2.5 border-2 border-[#B8976B]/15 rounded-xl focus:border-[#1B5E4F] focus:ring-2 focus:ring-[#1B5E4F]/10 outline-none transition-all text-sm text-[#1B5E4F]"
               />
             </div>
             <button
-              onClick={() => setShowFilters(s => !s)}
+              onClick={() => setShowFilters((s) => !s)}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-xl border-2 text-sm font-semibold transition-all ${
                 showFilters
                   ? "bg-[#1B5E4F] text-white border-[#1B5E4F]"
                   : "text-[#1B5E4F] border-[#B8976B]/20 hover:border-[#1B5E4F]"
               }`}
             >
-              <Filter size={16} />تصفية
+              <Filter size={16} />
+              تصفية
             </button>
           </div>
 
           {showFilters && (
             <div className="mt-4 pt-4 border-t border-[#B8976B]/10 grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="block text-[10px] font-bold text-[#1B5E4F]/60 uppercase tracking-widest mb-1.5">الشهر</label>
+                <label className="block text-[10px] font-bold text-[#1B5E4F]/60 uppercase tracking-widest mb-1.5">
+                  الشهر
+                </label>
                 <div className="relative">
                   <select
                     value={filterMonth}
-                    onChange={e => setFilterMonth(e.target.value)}
+                    onChange={(e) => setFilterMonth(e.target.value)}
                     className="w-full appearance-none pl-7 pr-3 py-2 border-2 border-[#B8976B]/15 rounded-xl focus:border-[#1B5E4F] outline-none text-sm text-[#1B5E4F]"
                   >
                     <option value="">الكل</option>
                     {MONTHS.map((m, i) => (
-                      <option key={i + 1} value={String(i + 1)}>{m}</option>
+                      <option key={i + 1} value={String(i + 1)}>
+                        {m}
+                      </option>
                     ))}
                   </select>
-                  <ChevronDown size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-[#B8976B] pointer-events-none" />
+                  <ChevronDown
+                    size={12}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 text-[#B8976B] pointer-events-none"
+                  />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-[#1B5E4F]/60 uppercase tracking-widest mb-1.5">السنة</label>
+                <label className="block text-[10px] font-bold text-[#1B5E4F]/60 uppercase tracking-widest mb-1.5">
+                  السنة
+                </label>
                 <input
                   type="number"
                   value={filterYear}
-                  onChange={e => setFilterYear(e.target.value)}
+                  onChange={(e) => setFilterYear(e.target.value)}
                   className="w-full px-3 py-2 border-2 border-[#B8976B]/15 rounded-xl focus:border-[#1B5E4F] outline-none text-sm text-[#1B5E4F]"
                   dir="ltr"
                   placeholder={String(CURRENT_YEAR)}
@@ -838,18 +1088,23 @@ export default function SalaryPage() {
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-[#1B5E4F]/60 uppercase tracking-widest mb-1.5">حالة التأكيد</label>
+                <label className="block text-[10px] font-bold text-[#1B5E4F]/60 uppercase tracking-widest mb-1.5">
+                  حالة التأكيد
+                </label>
                 <div className="relative">
                   <select
                     value={filterConf}
-                    onChange={e => setFilterConf(e.target.value)}
+                    onChange={(e) => setFilterConf(e.target.value)}
                     className="w-full appearance-none pl-7 pr-3 py-2 border-2 border-[#B8976B]/15 rounded-xl focus:border-[#1B5E4F] outline-none text-sm text-[#1B5E4F]"
                   >
                     <option value="">الكل</option>
                     <option value="true">مؤكد</option>
                     <option value="false">غير مؤكد</option>
                   </select>
-                  <ChevronDown size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-[#B8976B] pointer-events-none" />
+                  <ChevronDown
+                    size={12}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 text-[#B8976B] pointer-events-none"
+                  />
                 </div>
               </div>
             </div>
@@ -870,7 +1125,9 @@ export default function SalaryPage() {
             <div className="w-14 h-14 rounded-2xl bg-red-50 flex items-center justify-center">
               <AlertTriangle className="text-red-400" size={24} />
             </div>
-            <p className="text-gray-400 text-sm">{(error as Error)?.message ?? "فشل تحميل البيانات"}</p>
+            <p className="text-gray-400 text-sm">
+              {(error as Error)?.message ?? "فشل تحميل البيانات"}
+            </p>
             <button
               onClick={() => qc.invalidateQueries({ queryKey: QUERY_KEY })}
               className="px-5 py-2 bg-[#1B5E4F] text-white rounded-xl text-sm font-semibold"
@@ -881,10 +1138,11 @@ export default function SalaryPage() {
         )}
 
         {/* Grid */}
-        {!isLoading && !isError && (
-          displayed.length > 0 ? (
+        {!isLoading &&
+          !isError &&
+          (displayed.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {displayed.map(s => (
+              {displayed.map((s) => (
                 <SalaryCard
                   key={s.id}
                   salary={s}
@@ -899,26 +1157,36 @@ export default function SalaryPage() {
               <div className="w-20 h-20 mx-auto mb-5 rounded-2xl bg-[#F5F1E8] flex items-center justify-center">
                 <DollarSign className="text-[#B8976B]" size={32} />
               </div>
-              <h3 className="text-xl font-bold text-[#1B5E4F] mb-1">لا توجد سجلات رواتب</h3>
-              <p className="text-gray-400 text-sm mb-6">ابدأ بإضافة راتب الموظف الأول</p>
+              <h3 className="text-xl font-bold text-[#1B5E4F] mb-1">
+                لا توجد سجلات رواتب
+              </h3>
+              <p className="text-gray-400 text-sm mb-6">
+                ابدأ بإضافة راتب الموظف الأول
+              </p>
               <button
                 onClick={openAdd}
                 className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-l from-[#1B5E4F] to-[#0F4F3E] text-white rounded-2xl font-semibold shadow-lg text-sm"
               >
-                <Plus size={16} />إضافة راتب
+                <Plus size={16} />
+                إضافة راتب
               </button>
             </div>
-          )
-        )}
+          ))}
       </div>
 
       {/* Modals */}
       {(modal === "add" || modal === "edit") && (
         <SalaryModal
           mode={modal}
-          initial={modal === "edit" && selected ? toFormData(selected) : EMPTY_FORM}
+          initial={
+            modal === "edit" && selected ? toFormData(selected) : EMPTY_FORM
+          }
           employees={employees}
-          empName={modal === "edit" && selected ? getEmpName(selected.employeeId) : undefined}
+          empName={
+            modal === "edit" && selected
+              ? getEmpName(selected.employeeId)
+              : undefined
+          }
           saving={addMutation.isPending || editMutation.isPending}
           error={formError}
           onSave={handleSave}
