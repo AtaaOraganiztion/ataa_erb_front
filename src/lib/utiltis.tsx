@@ -20,9 +20,9 @@ import VarianceAnalysisPage from "../pages/FinancialDepartment/VarianceAnalysisP
 import ExpensesPage from "../pages/FinancialDepartment/ExpensesPage.tsx";
 import AttendancePage from "../pages/HR/Attendance-salary/Attendance.tsx";
 import SalaryPage from "../pages/HR/Attendance-salary/Salary.tsx";
-import CustomersPage from "../pages/CRM/Customerspage.tsx";
-import LeadsPage from "../pages/CRM/LeadsPage.tsx";
-import DealsPage from "../pages/CRM/DealsPage.tsx";
+import DonnersPage from "../pages/CRM/DonnersPage.tsx";
+import ChariteiesPage from "../pages/CRM/ChariteiesPage.tsx";
+import DonationsPage from "../pages/CRM/DonationsPage.tsx";
 import ActivitiesPage from "../pages/CRM/ActivitiesPage.tsx";
 export interface SubItem {
   id: string;
@@ -180,26 +180,26 @@ export const NAV_CONFIG: NavCategory[] = [
         icon: UserCircle,
         subItems: [
           {
-            id: "customers",
-            label: "قاعدة العملاء",
-            page: "customers",
-            url: "/customers",
-            component: <CustomersPage />,
+            id: "donners",
+            label: "المانحين ",
+            page: "donners",
+            url: "/donners",
+            component: <DonnersPage />,
           },
           {
-            id: "leads",
-            label: "العملاء المحتملين",
-            page: "leads",
+            id: "chariteies",
+            label: "الجمعيات",
+            page: "chariteies",
             badge: "12",
-            url: "/leads",
-            component: <LeadsPage />,
+            url: "/chariteies",
+            component: <ChariteiesPage />,
           },
           {
-            id: "deals",
-            label: "الصفقات",
-            page: "deals",
-            url: "/deals",
-            component: <DealsPage />,
+            id: "donations",
+            label: "الدعومات",
+            page: "donations",
+            url: "/donations",
+            component: <DonationsPage />,
           },
           {
             id: "activities",

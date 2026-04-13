@@ -207,25 +207,25 @@ const STATUS_CFG: Record<
     dot: "bg-blue-500",
   },
   Contacted: {
-    label: "تم التواصل",
+    label: " قديم",
     cls: "bg-purple-50 text-purple-600 border-purple-200",
     dot: "bg-purple-500",
   },
   Qualified: {
-    label: "مؤهل",
+    label: "محظورة",
     cls: "bg-amber-50 text-amber-700 border-amber-200",
     dot: "bg-amber-500",
   },
   Lost: {
-    label: "خسارة",
-    cls: "bg-red-50 text-red-600 border-red-200",
-    dot: "bg-red-500",
+    label: "",
+    cls: "",
+    dot: ""
   },
   Won: {
-    label: "مكسب",
-    cls: "bg-emerald-50 text-emerald-700 border-emerald-200",
-    dot: "bg-emerald-500",
-  },
+    label: "",
+    cls: "",
+    dot: ""
+  }
 };
 
 const STAGE_CFG: Record<LeadStage, { label: string; step: number }> = {
@@ -506,10 +506,8 @@ const LeadModal = ({
                     onChange={(e) => set("status", e.target.value)}
                   >
                     <option value="New">جديد</option>
-                    <option value="Contacted">تم التواصل</option>
-                    <option value="Qualified">مؤهل</option>
-                    <option value="Lost">خسارة</option>
-                    <option value="Won">مكسب</option>
+                    <option value="Contacted"> قديم</option>
+                    <option value="Qualified">محظورة</option>
                   </select>
                   <ChevronDown
                     size={14}
@@ -525,12 +523,9 @@ const LeadModal = ({
                     value={form.stage}
                     onChange={(e) => set("stage", e.target.value)}
                   >
-                    <option value="Prospecting">استكشاف</option>
-                    <option value="Qualification">تأهيل</option>
-                    <option value="Proposal">عرض سعر</option>
-                    <option value="Negotiation">تفاوض</option>
-                    <option value="ClosedWon">مغلق / فوز</option>
-                    <option value="ClosedLost">مغلق / خسارة</option>
+                    <option value="Prospecting">جارى التواصل</option>
+                    <option value="Qualification">العقد سارى</option>
+                    <option value="Proposal"> العقد انهى</option>
                   </select>
                   <ChevronDown
                     size={14}
@@ -944,7 +939,7 @@ const LeadCard = ({
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
-const LeadsPage = () => {
+const ChariteiesPage = () => {
   const { user } = useAuth();
   const qc = useQueryClient();
 
@@ -1120,7 +1115,7 @@ const LeadsPage = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold bg-gradient-to-l from-[#1B5E4F] to-[#0F4F3E] bg-clip-text text-transparent">
-              العملاء المحتملين
+              الجمعيات
             </h1>
             <p className="text-gray-500 text-sm mt-1">
               مرحباً{user?.name ? ` ${user.name}،` : ","} إجمالي الفرص:{" "}
@@ -1530,4 +1525,4 @@ const LeadsPage = () => {
   );
 };
 
-export default LeadsPage;
+export default ChariteiesPage;
