@@ -689,7 +689,7 @@ const DealCard = ({
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
-const DealsPage = () => {
+const DonationsPage = () => {
   const { user } = useAuth();
   const qc = useQueryClient();
 
@@ -848,10 +848,10 @@ const DealsPage = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold bg-gradient-to-l from-[#1B5E4F] to-[#0F4F3E] bg-clip-text text-transparent">
-              الصفقات
+              الدعومات
             </h1>
             <p className="text-gray-500 text-sm mt-1">
-              مرحباً{user?.name ? ` ${user.name}،` : ","} إجمالي الصفقات:{" "}
+              مرحباً{user?.name ? ` ${user.name}،` : ","} إجمالي الدعم:{" "}
               <span className="font-bold text-[#1B5E4F]">
                 {displayed.length}
               </span>
@@ -865,7 +865,7 @@ const DealsPage = () => {
             }}
             className="flex items-center gap-2 px-6 py-3 bg-gradient-to-l from-[#1B5E4F] to-[#0F4F3E] text-white rounded-2xl font-semibold shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all self-start sm:self-auto"
           >
-            <Plus size={18} /> إضافة صفقة
+            <Plus size={18} /> إضافة دعم جديد
           </button>
         </div>
 
@@ -1201,4 +1201,4 @@ const DealsPage = () => {
   );
 };
 
-export default DealsPage;
+export default DonationsPage;

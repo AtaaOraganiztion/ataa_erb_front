@@ -145,9 +145,9 @@ const STATUS_CONFIG = {
     Icon: ShieldOff,
   },
   Blocked: {
-    label: "محظور",
-    cls: "bg-red-50 text-red-600 border-red-200",
-    dot: "bg-red-500",
+    label: "داعم",
+    cls: "bg-blue-50 text-blue-600 border-blue-200",
+    dot: "bg-blue-500",
     Icon: ShieldAlert,
   },
 };
@@ -301,7 +301,7 @@ const CustomerModal = ({
                   >
                     <option value="Active">نشط</option>
                     <option value="Inactive">غير نشط</option>
-                    <option value="Blocked">محظور</option>
+                    <option value="Blocked">داعم</option>
                   </select>
                   <ChevronDown
                     size={14}
@@ -599,7 +599,7 @@ const CustomerCard = ({
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
-const CustomersPage = () => {
+const DonnersPage = () => {
   const { user } = useAuth();
   const qc = useQueryClient();
 
@@ -785,11 +785,11 @@ const CustomersPage = () => {
               lbl: "text-gray-500",
             },
             {
-              label: "محظور",
+              label: "داعم",
               count: blockedCount,
-              cls: "from-red-50 to-red-100/50 border-red-200/60",
-              num: "text-red-600",
-              lbl: "text-red-500",
+              cls: "from-blue-50 to-blue-100/50 border-blue-200/60",
+              num: "text-blue-600",
+              lbl: "text-blue-500",
             },
           ].map(({ label, count, cls, num, lbl }) => (
             <div
@@ -841,7 +841,7 @@ const CustomersPage = () => {
                     <option value="">جميع الحالات</option>
                     <option value="Active">نشط</option>
                     <option value="Inactive">غير نشط</option>
-                    <option value="Blocked">محظور</option>
+                    <option value="Blocked">داعم</option>
                   </select>
                   <ChevronDown
                     size={14}
@@ -1060,4 +1060,4 @@ const CustomersPage = () => {
   );
 };
 
-export default CustomersPage;
+export default DonnersPage;
