@@ -1,4 +1,11 @@
-import { createContext, useState, useEffect, useContext, useCallback } from "react";
+import {
+  createContext,
+  useState,
+  useEffect,
+  useContext,
+  useCallback,
+} from "react";
+import { useNavigate } from "react-router-dom";
 
 // --------------------------
 // TYPES
@@ -23,12 +30,25 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   loading: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  register: (fullName: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  login: (
+    email: string,
+    password: string,
+  ) => Promise<{ success: boolean; error?: string }>;
+  register: (
+    fullName: string,
+    email: string,
+    password: string,
+  ) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
-  updateUser: (userId: string, data: UpdateUserPayload) => Promise<{ success: boolean; error?: string }>;
+  updateUser: (
+    userId: string,
+    data: UpdateUserPayload,
+  ) => Promise<{ success: boolean; error?: string }>;
   getUserRoles: (userId: string) => Promise<string[]>;
-  updateUserRoles: (userId: string, roles: string[]) => Promise<{ success: boolean; error?: string }>;
+  updateUserRoles: (
+    userId: string,
+    roles: string[],
+  ) => Promise<{ success: boolean; error?: string }>;
   hasRole: (role: string) => boolean;
   hasPermission: (permission: string) => boolean;
   hasAnyPermission: (permissions: string[]) => boolean;
@@ -58,13 +78,12 @@ const getAuthHeaders = (): HeadersInit => ({
 
 // --------------------------
 // HELPER: Map API response → User
-// The API returns: { accessToken, expiresIn, user: { id, name, email, profileImage, roles, ... } }
 // --------------------------
 const mapApiUser = (apiUser: any): User => ({
   userId: apiUser.id,
   email: apiUser.email,
   name: apiUser.name,
-  fullName: apiUser.name,           // alias for convenience
+  fullName: apiUser.name,
   roles: apiUser.roles ?? [],
   permissions: apiUser.permissions ?? [],
   avatar: apiUser.profileImage ?? null,
@@ -83,6 +102,7 @@ function AuthContextProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   // Rehydrate from localStorage on mount
   useEffect(() => {
@@ -109,9 +129,10 @@ function AuthContextProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem("user");
     setUser(null);
     setIsAuthenticated(false);
-  }, []);
+    navigate("/login");
+  }, [navigate]);
 
-  // Token expiration check — uses expiresIn (minutes) from API
+  // Token expiration check
   useEffect(() => {
     if (!isAuthenticated) return;
 
@@ -127,8 +148,6 @@ function AuthContextProvider({ children }: { children: React.ReactNode }) {
 
   // --------------------------
   // LOGIN
-  // Response shape:
-  // { accessToken, expiresIn (minutes), tokenType, sessionState, user: { id, name, email, ... } }
   // --------------------------
   const login = async (email: string, password: string) => {
     try {
@@ -143,16 +162,13 @@ function AuthContextProvider({ children }: { children: React.ReactNode }) {
 
       const data = await response.json();
 
-      // Store token
       localStorage.setItem("accessToken", data.accessToken);
 
-      // Calculate expiry from expiresIn (minutes) and store as UTC string
       if (data.expiresIn) {
         const expiresAt = new Date(Date.now() + data.expiresIn * 60 * 1000);
         localStorage.setItem("expiresAtUtc", expiresAt.toISOString());
       }
 
-      // Map and store user — data.user is the nested object from API
       const userData = mapApiUser(data.user);
       localStorage.setItem("user", JSON.stringify(userData));
       setUser(userData);
@@ -167,7 +183,11 @@ function AuthContextProvider({ children }: { children: React.ReactNode }) {
   // --------------------------
   // REGISTER
   // --------------------------
-  const register = async (fullName: string, email: string, password: string) => {
+  const register = async (
+    fullName: string,
+    email: string,
+    password: string,
+  ) => {
     try {
       const response = await fetch(`${API_BASE_URL}/Api/V1/users/register`, {
         method: "POST",
@@ -214,10 +234,13 @@ function AuthContextProvider({ children }: { children: React.ReactNode }) {
 
       const data = await response.json();
 
-      // Re-map in case API returns full user object again
       const updatedUser: User = data.user
         ? mapApiUser(data.user)
-        : { ...user!, ...payload, fullName: payload.fullName ?? user!.fullName };
+        : {
+            ...user!,
+            ...payload,
+            fullName: payload.fullName ?? user!.fullName,
+          };
 
       localStorage.setItem("user", JSON.stringify(updatedUser));
       setUser(updatedUser);
@@ -233,9 +256,10 @@ function AuthContextProvider({ children }: { children: React.ReactNode }) {
   // --------------------------
   const getUserRoles = async (userId: string): Promise<string[]> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/Api/V1/users/${userId}/roles`, {
-        headers: getAuthHeaders(),
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/Api/V1/users/${userId}/roles`,
+        { headers: getAuthHeaders() },
+      );
 
       if (!response.ok) throw new Error("فشل جلب الصلاحيات");
 
@@ -251,11 +275,14 @@ function AuthContextProvider({ children }: { children: React.ReactNode }) {
   // --------------------------
   const updateUserRoles = async (userId: string, roles: string[]) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/Api/V1/users/${userId}/roles`, {
-        method: "PUT",
-        headers: getAuthHeaders(),
-        body: JSON.stringify({ roles }),
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/Api/V1/users/${userId}/roles`,
+        {
+          method: "PUT",
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ roles }),
+        },
+      );
 
       if (!response.ok)
         throw new Error((await response.text()) || "فشل تحديث الصلاحيات");
@@ -276,7 +303,8 @@ function AuthContextProvider({ children }: { children: React.ReactNode }) {
   // PERMISSION / ROLE HELPERS
   // --------------------------
   const hasRole = (role: string) => user?.roles?.includes(role) ?? false;
-  const hasPermission = (permission: string) => user?.permissions?.includes(permission) ?? false;
+  const hasPermission = (permission: string) =>
+    user?.permissions?.includes(permission) ?? false;
   const hasAnyPermission = (permissions: string[]) =>
     permissions.some((p) => user?.permissions?.includes(p)) ?? false;
   const hasAllPermissions = (permissions: string[]) =>
