@@ -24,6 +24,7 @@ const LoginSchema = yup.object({
 
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const year = new Date().getFullYear();
   const navigate = useNavigate();
   const {
     register,
@@ -188,7 +189,7 @@ const LoginPage = () => {
           {/* Footer */}
           <div className="bg-linear-to-br from-[#F5F1E8] to-white px-8 py-4 border-t-2 border-[#B8976B]/10">
             <p className="text-center text-xs text-[#4A4A4A]">
-              © 2024 استدامة العطاء الدولية. جميع الحقوق محفوظة.
+              © {year} استدامة العطاء الدولية. جميع الحقوق محفوظة.
             </p>
           </div>
         </div>
