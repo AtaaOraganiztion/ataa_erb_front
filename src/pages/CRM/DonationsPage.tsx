@@ -16,19 +16,19 @@ import {
   Calendar,
   Plus,
   TrendingUp,
-  Trophy,
   PauseCircle,
-  XCircle,
   BarChart2,
-  Briefcase,
   User,
   Target,
+  Heart,
+  Package,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type DealStatus = "Open" | "Won" | "Lost" | "OnHold";
+// Status mapping:  Open → مادي  |  Won → عيني  |  OnHold → معلق
+type DealStatus = "Open" | "Won" | "OnHold";
 
 interface Deal {
   id: string;
@@ -38,12 +38,19 @@ interface Deal {
   closedDate?: string;
   notes?: string;
   leadId?: string;
+  customerId?: string;
   assignedToUserId?: string;
 }
 
-interface Lead {
+interface Charity {
   id: string;
   title: string;
+}
+
+interface Donor {
+  id: string;
+  fullName: string;
+  company?: string;
 }
 
 interface SystemUser {
@@ -59,6 +66,7 @@ interface DealFormData {
   closedDate: string;
   notes: string;
   leadId: string;
+  customerId: string;
   assignedToUserId: string;
 }
 
@@ -69,12 +77,14 @@ const EMPTY_FORM: DealFormData = {
   closedDate: "",
   notes: "",
   leadId: "",
+  customerId: "",
   assignedToUserId: "",
 };
 
 const API_BASE = import.meta.env.VITE_API_URL;
 const QUERY_KEY = ["deals"] as const;
-const LEADS_QUERY_KEY = ["leads"] as const;
+const CHARITIES_QUERY_KEY = ["leads"] as const;
+const DONORS_QUERY_KEY = ["customers"] as const;
 const USERS_QUERY_KEY = ["system-users"] as const;
 
 // ─── API ──────────────────────────────────────────────────────────────────────
@@ -104,12 +114,12 @@ const fetchDeals = (params: Record<string, string>) => {
   return authFetch(`${API_BASE}/Api/V1/Deal/Get-All${qs ? `?${qs}` : ""}`);
 };
 
-const fetchLeads = () => authFetch(`${API_BASE}/Api/V1/Lead/Get-All`);
-
+const fetchCharities = () => authFetch(`${API_BASE}/Api/V1/Lead/Get-All`);
+const fetchDonors = () => authFetch(`${API_BASE}/Api/V1/Customer/Get-All`);
 const fetchUsers = () =>
   authFetch(`${API_BASE}/Api/V1/users/get?PageIndex=1&PageSize=100`);
 
-// POST includes leadId
+// POST: includes leadId + customerId
 const apiAdd = (data: DealFormData) =>
   authFetch(`${API_BASE}/Api/V1/Deal/Add`, {
     method: "POST",
@@ -120,11 +130,12 @@ const apiAdd = (data: DealFormData) =>
       closedDate: data.closedDate || null,
       notes: data.notes || null,
       leadId: data.leadId || null,
+      customerId: data.customerId || null,
       assignedToUserId: data.assignedToUserId || null,
     }),
   });
 
-// PUT does NOT include leadId
+// PUT: includes customerId but NOT leadId
 const apiUpdate = ({ id, data }: { id: string; data: DealFormData }) =>
   authFetch(`${API_BASE}/Api/V1/Deal/${id}`, {
     method: "PUT",
@@ -134,6 +145,7 @@ const apiUpdate = ({ id, data }: { id: string; data: DealFormData }) =>
       status: data.status,
       closedDate: data.closedDate || null,
       notes: data.notes || null,
+      customerId: data.customerId || null,
       assignedToUserId: data.assignedToUserId || null,
     }),
   });
@@ -143,10 +155,10 @@ const apiDelete = (id: string) =>
 
 const normalize = (raw: unknown): Deal[] =>
   Array.isArray(raw) ? raw : ((raw as any)?.data ?? (raw as any)?.items ?? []);
-
-const normalizeLeads = (raw: unknown): Lead[] =>
+const normalizeCharities = (raw: unknown): Charity[] =>
   Array.isArray(raw) ? raw : ((raw as any)?.data ?? (raw as any)?.items ?? []);
-
+const normalizeDonors = (raw: unknown): Donor[] =>
+  Array.isArray(raw) ? raw : ((raw as any)?.data ?? (raw as any)?.items ?? []);
 const normalizeUsers = (raw: unknown): SystemUser[] =>
   Array.isArray(raw)
     ? raw
@@ -159,25 +171,18 @@ const STATUS_CFG: Record<
   { label: string; cls: string; dot: string; card: string; Icon: any }
 > = {
   Open: {
-    label: "مفتوح",
+    label: "مادي",
     cls: "bg-blue-50 text-blue-600 border-blue-200",
     dot: "bg-blue-500",
     card: "from-blue-600 to-blue-800",
-    Icon: Briefcase,
+    Icon: DollarSign,
   },
   Won: {
-    label: "مكتسب",
+    label: "عيني",
     cls: "bg-emerald-50 text-emerald-700 border-emerald-200",
     dot: "bg-emerald-500",
     card: "from-emerald-600 to-emerald-800",
-    Icon: Trophy,
-  },
-  Lost: {
-    label: "خسارة",
-    cls: "bg-red-50 text-red-600 border-red-200",
-    dot: "bg-red-500",
-    card: "from-red-700 to-red-900",
-    Icon: XCircle,
+    Icon: Package,
   },
   OnHold: {
     label: "معلق",
@@ -200,25 +205,15 @@ const StatusBadge = ({ status }: { status: DealStatus }) => {
   );
 };
 
-// ─── Value Tier ───────────────────────────────────────────────────────────────
-
 const ValueTier = ({ value }: { value: number }) => {
   const tier =
     value >= 1_000_000
-      ? {
-          label: "كبيرة",
-          cls: "text-purple-600 bg-purple-50 border-purple-200",
-        }
+      ? { label: "كبيرة", cls: "text-purple-600 bg-purple-50 border-purple-200" }
       : value >= 100_000
-        ? {
-            label: "متوسطة",
-            cls: "text-[#1B5E4F] bg-[#F5F1E8] border-[#B8976B]/30",
-          }
+        ? { label: "متوسطة", cls: "text-[#1B5E4F] bg-[#F5F1E8] border-[#B8976B]/30" }
         : { label: "صغيرة", cls: "text-gray-600 bg-gray-50 border-gray-200" };
   return (
-    <span
-      className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${tier.cls}`}
-    >
+    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${tier.cls}`}>
       {tier.label}
     </span>
   );
@@ -227,23 +222,20 @@ const ValueTier = ({ value }: { value: number }) => {
 // ─── Modal ────────────────────────────────────────────────────────────────────
 
 const DealModal = ({
-  mode,
-  initial,
-  saving,
-  error,
-  leads,
-  leadsLoading,
-  systemUsers,
-  usersLoading,
-  onSave,
-  onClose,
+  mode, initial, saving, error,
+  charities, charitiesLoading,
+  donors, donorsLoading,
+  systemUsers, usersLoading,
+  onSave, onClose,
 }: {
   mode: "add" | "edit";
   initial: DealFormData;
   saving: boolean;
   error?: string | null;
-  leads: Lead[];
-  leadsLoading: boolean;
+  charities: Charity[];
+  charitiesLoading: boolean;
+  donors: Donor[];
+  donorsLoading: boolean;
   systemUsers: SystemUser[];
   usersLoading: boolean;
   onSave: (data: DealFormData) => void;
@@ -258,43 +250,28 @@ const DealModal = ({
   const labelCls =
     "block text-xs font-bold text-[#1B5E4F]/70 mb-1.5 uppercase tracking-wider";
   const selectCls = inputCls + " appearance-none";
-
   const statusInfo = STATUS_CFG[form.status];
 
   const LoadingSelect = ({ text }: { text: string }) => (
     <div className="w-full px-4 py-2.5 border-2 border-[#B8976B]/30 rounded-xl bg-gray-50 flex items-center gap-2 text-gray-400 text-sm">
-      <Loader2 size={14} className="animate-spin" />
-      {text}
+      <Loader2 size={14} className="animate-spin" /> {text}
     </div>
   );
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      dir="rtl"
-    >
-      <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-        onClick={onClose}
-      />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" dir="rtl">
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
-        <div
-          className={`bg-gradient-to-l ${statusInfo.card} px-8 py-6 flex items-center justify-between shrink-0`}
-        >
+        <div className={`bg-gradient-to-l ${statusInfo.card} px-8 py-6 flex items-center justify-between shrink-0`}>
           <div>
             <h2 className="text-xl font-bold text-white">
-              {mode === "add" ? "إضافة صفقة جديدة" : "تعديل الصفقة"}
+              {mode === "add" ? "إضافة دعم جديد" : "تعديل الدعم"}
             </h2>
             <p className="text-white/60 text-sm mt-0.5">
-              {mode === "add"
-                ? "أدخل بيانات الصفقة الجديدة"
-                : "تحديث بيانات الصفقة"}
+              {mode === "add" ? "أدخل بيانات الدعم الجديد" : "تحديث بيانات الدعم"}
             </p>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-white/10 rounded-xl transition-all"
-          >
+          <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-xl transition-all">
             <X className="text-white" size={20} />
           </button>
         </div>
@@ -310,20 +287,20 @@ const DealModal = ({
           {/* Deal Details */}
           <section>
             <h3 className="text-sm font-bold text-[#B8976B] uppercase tracking-widest mb-4 flex items-center gap-2">
-              <span className="w-4 h-px bg-[#B8976B]" /> تفاصيل الصفقة
+              <span className="w-4 h-px bg-[#B8976B]" /> تفاصيل الدعم
             </h3>
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2">
-                <label className={labelCls}>عنوان الصفقة</label>
+                <label className={labelCls}>عنوان المشروع</label>
                 <input
                   className={inputCls}
-                  placeholder="وصف موجز للصفقة"
+                  placeholder="وصف موجز للمشروع"
                   value={form.title}
                   onChange={(e) => set("title", e.target.value)}
                 />
               </div>
               <div>
-                <label className={labelCls}>قيمة الصفقة (ريال)</label>
+                <label className={labelCls}>قيمة الدعم (ريال)</label>
                 <input
                   type="number"
                   dir="ltr"
@@ -334,22 +311,18 @@ const DealModal = ({
                 />
               </div>
               <div>
-                <label className={labelCls}>الحالة</label>
+                <label className={labelCls}>نوع الدعم</label>
                 <div className="relative">
                   <select
                     className={selectCls}
                     value={form.status}
                     onChange={(e) => set("status", e.target.value)}
                   >
-                    <option value="Open">مفتوح</option>
-                    <option value="Won">مكتسب</option>
-                    <option value="Lost">خسارة</option>
+                    <option value="Open">مادي</option>
+                    <option value="Won">عيني</option>
                     <option value="OnHold">معلق</option>
                   </select>
-                  <ChevronDown
-                    size={14}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-[#B8976B] pointer-events-none"
-                  />
+                  <ChevronDown size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#B8976B] pointer-events-none" />
                 </div>
               </div>
               <div className="col-span-2">
@@ -360,33 +333,28 @@ const DealModal = ({
                   className={inputCls}
                   value={form.closedDate ? form.closedDate.split("T")[0] : ""}
                   onChange={(e) =>
-                    set(
-                      "closedDate",
-                      e.target.value ? `${e.target.value}T00:00:00.000Z` : "",
-                    )
+                    set("closedDate", e.target.value ? `${e.target.value}T00:00:00.000Z` : "")
                   }
                 />
               </div>
             </div>
           </section>
 
-          {/* Lead & Assignment */}
+          {/* Linking */}
           <section>
             <h3 className="text-sm font-bold text-[#B8976B] uppercase tracking-widest mb-4 flex items-center gap-2">
               <span className="w-4 h-px bg-[#B8976B]" /> الربط والتعيين
             </h3>
             <div className="grid grid-cols-2 gap-4">
-              {/* leadId only shown on Add — API's PUT doesn't accept it */}
+              {/* leadId only in Add — PUT doesn't accept it */}
               {mode === "add" && (
                 <div className="col-span-2">
                   <label className={labelCls}>
-                    <span className="flex items-center gap-1">
-                      <Target size={11} /> العميل المحتمل
-                    </span>
+                    <span className="flex items-center gap-1"><Target size={11} /> الجمعية</span>
                   </label>
                   <div className="relative">
-                    {leadsLoading ? (
-                      <LoadingSelect text="جاري تحميل العملاء المحتملين..." />
+                    {charitiesLoading ? (
+                      <LoadingSelect text="جاري تحميل الجمعيات..." />
                     ) : (
                       <>
                         <select
@@ -394,17 +362,12 @@ const DealModal = ({
                           value={form.leadId}
                           onChange={(e) => set("leadId", e.target.value)}
                         >
-                          <option value="">بدون ربط بعميل محتمل</option>
-                          {leads.map((l) => (
-                            <option key={l.id} value={l.id}>
-                              {l.title}
-                            </option>
+                          <option value="">بدون ربط بجمعية</option>
+                          {charities.map((c) => (
+                            <option key={c.id} value={c.id}>{c.title}</option>
                           ))}
                         </select>
-                        <ChevronDown
-                          size={14}
-                          className="absolute left-3 top-1/2 -translate-y-1/2 text-[#B8976B] pointer-events-none"
-                        />
+                        <ChevronDown size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#B8976B] pointer-events-none" />
                       </>
                     )}
                   </div>
@@ -413,9 +376,34 @@ const DealModal = ({
 
               <div className="col-span-2">
                 <label className={labelCls}>
-                  <span className="flex items-center gap-1">
-                    <User size={11} /> المسؤول عن الصفقة
-                  </span>
+                  <span className="flex items-center gap-1"><Heart size={11} /> المانح</span>
+                </label>
+                <div className="relative">
+                  {donorsLoading ? (
+                    <LoadingSelect text="جاري تحميل المانحين..." />
+                  ) : (
+                    <>
+                      <select
+                        className={selectCls}
+                        value={form.customerId}
+                        onChange={(e) => set("customerId", e.target.value)}
+                      >
+                        <option value="">بدون ربط بمانح</option>
+                        {donors.map((d) => (
+                          <option key={d.id} value={d.id}>
+                            {d.fullName}{d.company ? ` — ${d.company}` : ""}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#B8976B] pointer-events-none" />
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <div className="col-span-2">
+                <label className={labelCls}>
+                  <span className="flex items-center gap-1"><User size={11} /> المسؤول عن الدعم</span>
                 </label>
                 <div className="relative">
                   {usersLoading ? (
@@ -425,22 +413,16 @@ const DealModal = ({
                       <select
                         className={selectCls}
                         value={form.assignedToUserId}
-                        onChange={(e) =>
-                          set("assignedToUserId", e.target.value)
-                        }
+                        onChange={(e) => set("assignedToUserId", e.target.value)}
                       >
                         <option value="">بدون تعيين</option>
                         {systemUsers.map((u) => (
                           <option key={u.id} value={u.id}>
-                            {u.name}
-                            {u.email ? ` — ${u.email}` : ""}
+                            {u.name}{u.email ? ` — ${u.email}` : ""}
                           </option>
                         ))}
                       </select>
-                      <ChevronDown
-                        size={14}
-                        className="absolute left-3 top-1/2 -translate-y-1/2 text-[#B8976B] pointer-events-none"
-                      />
+                      <ChevronDown size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#B8976B] pointer-events-none" />
                     </>
                   )}
                 </div>
@@ -456,7 +438,7 @@ const DealModal = ({
             <textarea
               className={inputCls + " resize-none"}
               rows={3}
-              placeholder="تفاصيل الصفقة، شروط، ملاحظات..."
+              placeholder="تفاصيل الدعم، شروط، ملاحظات..."
               value={form.notes}
               onChange={(e) => set("notes", e.target.value)}
             />
@@ -475,12 +457,8 @@ const DealModal = ({
             disabled={saving}
             className={`px-6 py-2.5 rounded-xl bg-gradient-to-l ${statusInfo.card} text-white font-semibold text-sm flex items-center gap-2 hover:shadow-lg transition-all disabled:opacity-60`}
           >
-            {saving ? (
-              <Loader2 size={16} className="animate-spin" />
-            ) : (
-              <CheckCircle size={16} />
-            )}
-            {mode === "add" ? "إضافة الصفقة" : "حفظ التعديلات"}
+            {saving ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
+            {mode === "add" ? "إضافة الدعم" : "حفظ التعديلات"}
           </button>
         </div>
       </div>
@@ -491,40 +469,25 @@ const DealModal = ({
 // ─── Delete Modal ─────────────────────────────────────────────────────────────
 
 const DeleteModal = ({
-  title,
-  deleting,
-  onConfirm,
-  onClose,
+  title, deleting, onConfirm, onClose,
 }: {
-  title: string;
-  deleting: boolean;
-  onConfirm: () => void;
-  onClose: () => void;
+  title: string; deleting: boolean; onConfirm: () => void; onClose: () => void;
 }) => (
-  <div
-    className="fixed inset-0 z-50 flex items-center justify-center p-4"
-    dir="rtl"
-  >
-    <div
-      className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-      onClick={onClose}
-    />
+  <div className="fixed inset-0 z-50 flex items-center justify-center p-4" dir="rtl">
+    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
     <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl p-8 text-center">
       <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-50 flex items-center justify-center">
         <AlertTriangle className="text-red-500" size={32} />
       </div>
       <h3 className="text-xl font-bold text-gray-800 mb-2">تأكيد الحذف</h3>
       <p className="text-gray-500 text-sm mb-6">
-        هل أنت متأكد من حذف صفقة{" "}
+        هل أنت متأكد من حذف الدعم{" "}
         <span className="font-bold text-red-600">{title}</span>؟
         <br />
         <span className="text-xs">هذا الإجراء لا يمكن التراجع عنه.</span>
       </p>
       <div className="flex gap-3">
-        <button
-          onClick={onClose}
-          className="flex-1 py-2.5 rounded-xl border-2 border-gray-200 text-gray-600 font-semibold text-sm hover:bg-gray-50"
-        >
+        <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border-2 border-gray-200 text-gray-600 font-semibold text-sm hover:bg-gray-50">
           إلغاء
         </button>
         <button
@@ -532,11 +495,7 @@ const DeleteModal = ({
           disabled={deleting}
           className="flex-1 py-2.5 rounded-xl bg-red-500 text-white font-semibold text-sm flex items-center justify-center gap-2 hover:bg-red-600 disabled:opacity-60"
         >
-          {deleting ? (
-            <Loader2 size={16} className="animate-spin" />
-          ) : (
-            <Trash2 size={16} />
-          )}{" "}
+          {deleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
           حذف
         </button>
       </div>
@@ -547,15 +506,12 @@ const DeleteModal = ({
 // ─── Deal Card ────────────────────────────────────────────────────────────────
 
 const DealCard = ({
-  deal,
-  leadTitle,
-  assignedUserName,
-  onEdit,
-  onDelete,
-  onView,
+  deal, charityTitle, donorName, assignedUserName,
+  onEdit, onDelete, onView,
 }: {
   deal: Deal;
-  leadTitle?: string;
+  charityTitle?: string;
+  donorName?: string;
   assignedUserName?: string;
   onEdit: () => void;
   onDelete: () => void;
@@ -567,9 +523,7 @@ const DealCard = ({
 
   return (
     <div className="bg-white rounded-2xl shadow-md border border-[#B8976B]/15 overflow-hidden hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 flex flex-col">
-      <div
-        className={`bg-gradient-to-br ${cfg.card} p-5 relative overflow-hidden`}
-      >
+      <div className={`bg-gradient-to-br ${cfg.card} p-5 relative overflow-hidden`}>
         <div className="absolute -top-6 -right-6 w-24 h-24 bg-white/5 rounded-full" />
         <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-white/5 rounded-full" />
         <div className="relative z-10 flex items-start justify-between gap-3">
@@ -578,49 +532,24 @@ const DealCard = ({
               <StatusIcon className="text-white" size={22} />
             </div>
             <div className="min-w-0">
-              <h3 className="text-sm font-bold text-white leading-tight line-clamp-2">
-                {deal.title}
-              </h3>
-              <div className="mt-1.5">
-                <StatusBadge status={deal.status} />
-              </div>
+              <h3 className="text-sm font-bold text-white leading-tight line-clamp-2">{deal.title}</h3>
+              <div className="mt-1.5"><StatusBadge status={deal.status} /></div>
             </div>
           </div>
           <div className="relative shrink-0">
-            <button
-              onClick={() => setOpen((o) => !o)}
-              className="p-1.5 hover:bg-white/10 rounded-lg transition-all"
-            >
+            <button onClick={() => setOpen((o) => !o)} className="p-1.5 hover:bg-white/10 rounded-lg transition-all">
               <MoreVertical className="text-white/70" size={18} />
             </button>
             {open && (
               <div className="absolute left-0 mt-2 w-44 bg-white rounded-2xl shadow-2xl border border-[#B8976B]/10 overflow-hidden z-30">
                 {[
-                  {
-                    icon: Eye,
-                    label: "عرض التفاصيل",
-                    color: "text-[#1B5E4F]",
-                    action: onView,
-                  },
-                  {
-                    icon: Edit,
-                    label: "تعديل",
-                    color: "text-blue-600",
-                    action: onEdit,
-                  },
-                  {
-                    icon: Trash2,
-                    label: "حذف",
-                    color: "text-red-500",
-                    action: onDelete,
-                  },
+                  { icon: Eye, label: "عرض التفاصيل", color: "text-[#1B5E4F]", action: onView },
+                  { icon: Edit, label: "تعديل", color: "text-blue-600", action: onEdit },
+                  { icon: Trash2, label: "حذف", color: "text-red-500", action: onDelete },
                 ].map(({ icon: Icon, label, color, action }) => (
                   <button
                     key={label}
-                    onClick={() => {
-                      action();
-                      setOpen(false);
-                    }}
+                    onClick={() => { action(); setOpen(false); }}
                     className={`w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-right ${color}`}
                   >
                     <Icon size={15} />
@@ -643,35 +572,31 @@ const DealCard = ({
           </div>
           <ValueTier value={deal.value} />
         </div>
-        {leadTitle && (
+        {charityTitle && (
           <div className="flex items-center gap-2">
             <Target size={14} className="text-[#B8976B] shrink-0" />
-            <span className="text-xs text-[#1B5E4F] font-medium truncate">
-              {leadTitle}
-            </span>
+            <span className="text-xs text-[#1B5E4F] font-medium truncate">{charityTitle}</span>
+          </div>
+        )}
+        {donorName && (
+          <div className="flex items-center gap-2">
+            <Heart size={14} className="text-[#B8976B] shrink-0" />
+            <span className="text-xs text-[#1B5E4F] font-medium truncate">{donorName}</span>
           </div>
         )}
         {deal.closedDate && (
           <div className="flex items-center gap-2">
             <Calendar size={14} className="text-[#B8976B] shrink-0" />
-            <span className="text-sm">
-              {new Date(deal.closedDate).toLocaleDateString("ar-SA")}
-            </span>
+            <span className="text-sm">{new Date(deal.closedDate).toLocaleDateString("ar-SA")}</span>
           </div>
         )}
         {assignedUserName && (
           <div className="flex items-center gap-2">
             <User size={14} className="text-[#B8976B] shrink-0" />
-            <span className="text-xs text-gray-400 truncate">
-              مسؤول: {assignedUserName}
-            </span>
+            <span className="text-xs text-gray-400 truncate">مسؤول: {assignedUserName}</span>
           </div>
         )}
-        {deal.notes && (
-          <p className="text-xs text-gray-400 line-clamp-2 pt-1">
-            {deal.notes}
-          </p>
-        )}
+        {deal.notes && <p className="text-xs text-gray-400 line-clamp-2 pt-1">{deal.notes}</p>}
       </div>
 
       <div className="border-t border-[#B8976B]/10">
@@ -679,8 +604,7 @@ const DealCard = ({
           onClick={onView}
           className={`w-full flex items-center justify-center gap-2 py-3 text-xs font-semibold transition-colors bg-gradient-to-l ${cfg.card} text-white hover:opacity-90`}
         >
-          <BarChart2 size={14} />
-          عرض التفاصيل
+          <BarChart2 size={14} /> عرض التفاصيل
         </button>
       </div>
     </div>
@@ -698,9 +622,7 @@ const DonationsPage = () => {
   const [minValue, setMinValue] = useState("");
   const [maxValue, setMaxValue] = useState("");
   const [showFilters, setShowFilters] = useState(false);
-  const [modal, setModal] = useState<null | "add" | "edit" | "delete" | "view">(
-    null,
-  );
+  const [modal, setModal] = useState<null | "add" | "edit" | "delete" | "view">(null);
   const [selected, setSelected] = useState<Deal | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -709,20 +631,21 @@ const DonationsPage = () => {
   if (minValue) serverParams.MinValue = minValue;
   if (maxValue) serverParams.MaxValue = maxValue;
 
-  const {
-    data: raw,
-    isLoading,
-    isError,
-    error,
-  } = useQuery({
+  const { data: raw, isLoading, isError, error } = useQuery({
     queryKey: [...QUERY_KEY, serverParams],
     queryFn: () => fetchDeals(serverParams),
     staleTime: 30_000,
   });
 
-  const { data: leadsRaw, isLoading: leadsLoading } = useQuery({
-    queryKey: LEADS_QUERY_KEY,
-    queryFn: fetchLeads,
+  const { data: charitiesRaw, isLoading: charitiesLoading } = useQuery({
+    queryKey: CHARITIES_QUERY_KEY,
+    queryFn: fetchCharities,
+    staleTime: 60_000,
+  });
+
+  const { data: donorsRaw, isLoading: donorsLoading } = useQuery({
+    queryKey: DONORS_QUERY_KEY,
+    queryFn: fetchDonors,
     staleTime: 60_000,
   });
 
@@ -733,38 +656,27 @@ const DonationsPage = () => {
   });
 
   const deals: Deal[] = normalize(raw);
-  const leads: Lead[] = normalizeLeads(leadsRaw);
+  const charities: Charity[] = normalizeCharities(charitiesRaw);
+  const donors: Donor[] = normalizeDonors(donorsRaw);
   const systemUsers: SystemUser[] = normalizeUsers(usersRaw);
 
-  const leadMap = new Map<string, Lead>(leads.map((l) => [l.id, l]));
-  const userMap = new Map<string, SystemUser>(
-    systemUsers.map((u) => [u.id, u]),
-  );
+  const charityMap = new Map<string, Charity>(charities.map((c) => [c.id, c]));
+  const donorMap = new Map<string, Donor>(donors.map((d) => [d.id, d]));
+  const userMap = new Map<string, SystemUser>(systemUsers.map((u) => [u.id, u]));
 
   const displayed = search
     ? deals.filter((d) => d.title?.toLowerCase().includes(search.toLowerCase()))
     : deals;
 
-  const closeModal = () => {
-    setModal(null);
-    setSelected(null);
-    setFormError(null);
-  };
+  const closeModal = () => { setModal(null); setSelected(null); setFormError(null); };
 
   const addMutation = useMutation({
     mutationFn: apiAdd,
     onMutate: async (data) => {
       await qc.cancelQueries({ queryKey: QUERY_KEY });
       const prev = qc.getQueriesData({ queryKey: QUERY_KEY });
-      const temp: Deal = {
-        id: `temp-${Date.now()}`,
-        ...data,
-        value: Number(data.value) || 0,
-      };
-      qc.setQueriesData({ queryKey: QUERY_KEY }, (old: unknown) => [
-        ...normalize(old),
-        temp,
-      ]);
+      const temp: Deal = { id: `temp-${Date.now()}`, ...data, value: Number(data.value) || 0 };
+      qc.setQueriesData({ queryKey: QUERY_KEY }, (old: unknown) => [...normalize(old), temp]);
       closeModal();
       return { prev };
     },
@@ -822,24 +734,21 @@ const DonationsPage = () => {
     closedDate: d.closedDate ?? "",
     notes: d.notes ?? "",
     leadId: d.leadId ?? "",
+    customerId: d.customerId ?? "",
     assignedToUserId: d.assignedToUserId ?? "",
   });
 
   const handleSave = (data: DealFormData) => {
     setFormError(null);
     if (modal === "add") addMutation.mutate(data);
-    else if (modal === "edit" && selected)
-      editMutation.mutate({ id: selected.id, data });
+    else if (modal === "edit" && selected) editMutation.mutate({ id: selected.id, data });
   };
 
   const isSaving = addMutation.isPending || editMutation.isPending;
-
   const totalValue = deals.reduce((s, d) => s + (d.value ?? 0), 0);
-  const wonValue = deals
-    .filter((d) => d.status === "Won")
-    .reduce((s, d) => s + (d.value ?? 0), 0);
-  const openCount = deals.filter((d) => d.status === "Open").length;
-  const wonCount = deals.filter((d) => d.status === "Won").length;
+  const madyValue = deals.filter((d) => d.status === "Open").reduce((s, d) => s + (d.value ?? 0), 0);
+  const madyCount = deals.filter((d) => d.status === "Open").length;
+  const aynyCount = deals.filter((d) => d.status === "Won").length;
 
   return (
     <div className="min-h-screen" dir="rtl">
@@ -851,18 +760,12 @@ const DonationsPage = () => {
               الدعومات
             </h1>
             <p className="text-gray-500 text-sm mt-1">
-              مرحباً{user?.name ? ` ${user.name}،` : ","} إجمالي الدعم:{" "}
-              <span className="font-bold text-[#1B5E4F]">
-                {displayed.length}
-              </span>
+              مرحباً{user?.name ? ` ${user.name}،` : ","} إجمالي الدعومات:{" "}
+              <span className="font-bold text-[#1B5E4F]">{displayed.length}</span>
             </p>
           </div>
           <button
-            onClick={() => {
-              setSelected(null);
-              setFormError(null);
-              setModal("add");
-            }}
+            onClick={() => { setSelected(null); setFormError(null); setModal("add"); }}
             className="flex items-center gap-2 px-6 py-3 bg-gradient-to-l from-[#1B5E4F] to-[#0F4F3E] text-white rounded-2xl font-semibold shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all self-start sm:self-auto"
           >
             <Plus size={18} /> إضافة دعم جديد
@@ -873,42 +776,23 @@ const DonationsPage = () => {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
             {
-              label: "إجمالي القيمة",
-              value: totalValue.toLocaleString("ar-SA"),
-              sub: "ريال",
-              cls: "from-[#1B5E4F]/5 to-[#0F4F3E]/10 border-[#1B5E4F]/20",
-              val: "text-[#1B5E4F]",
-              lbl: "text-[#1B5E4F]/60",
+              label: "إجمالي القيمة", value: totalValue.toLocaleString("ar-SA"), sub: "ريال",
+              cls: "from-[#1B5E4F]/5 to-[#0F4F3E]/10 border-[#1B5E4F]/20", val: "text-[#1B5E4F]", lbl: "text-[#1B5E4F]/60",
             },
             {
-              label: "قيمة المكتسبة",
-              value: wonValue.toLocaleString("ar-SA"),
-              sub: "ريال",
-              cls: "from-emerald-50 to-emerald-100/50 border-emerald-200/60",
-              val: "text-emerald-700",
-              lbl: "text-emerald-600",
+              label: "قيمة الدعم المادي", value: madyValue.toLocaleString("ar-SA"), sub: "ريال",
+              cls: "from-blue-50 to-blue-100/50 border-blue-200/60", val: "text-blue-700", lbl: "text-blue-600",
             },
             {
-              label: "صفقات مفتوحة",
-              value: openCount,
-              sub: "صفقة",
-              cls: "from-blue-50 to-blue-100/50 border-blue-200/60",
-              val: "text-blue-700",
-              lbl: "text-blue-600",
+              label: "دعم مادي", value: madyCount, sub: "دعم",
+              cls: "from-blue-50 to-blue-100/50 border-blue-200/60", val: "text-blue-700", lbl: "text-blue-600",
             },
             {
-              label: "صفقات مكتسبة",
-              value: wonCount,
-              sub: "صفقة",
-              cls: "from-amber-50 to-amber-100/50 border-amber-200/60",
-              val: "text-amber-700",
-              lbl: "text-amber-600",
+              label: "دعم عيني", value: aynyCount, sub: "دعم",
+              cls: "from-emerald-50 to-emerald-100/50 border-emerald-200/60", val: "text-emerald-700", lbl: "text-emerald-600",
             },
           ].map(({ label, value, sub, cls, val, lbl }) => (
-            <div
-              key={label}
-              className={`bg-gradient-to-br ${cls} border rounded-2xl p-4`}
-            >
+            <div key={label} className={`bg-gradient-to-br ${cls} border rounded-2xl p-4`}>
               <p className={`text-xs font-semibold ${lbl} mb-1`}>{label}</p>
               <p className={`text-xl font-bold ${val}`}>{value}</p>
               <p className={`text-xs ${lbl}`}>{sub}</p>
@@ -920,13 +804,10 @@ const DonationsPage = () => {
         <div className="bg-white rounded-2xl shadow-sm border border-[#B8976B]/15 p-5">
           <div className="flex gap-3 flex-wrap">
             <div className="flex-1 min-w-[220px] relative">
-              <Search
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-[#B8976B]"
-                size={17}
-              />
+              <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-[#B8976B]" size={17} />
               <input
                 type="text"
-                placeholder="بحث في الصفقات..."
+                placeholder="بحث في الدعومات..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full pr-11 pl-4 py-2.5 border-2 border-[#B8976B]/20 rounded-xl focus:border-[#1B5E4F] focus:ring-2 focus:ring-[#1B5E4F]/10 outline-none transition-all text-sm text-[#1B5E4F]"
@@ -942,49 +823,33 @@ const DonationsPage = () => {
           {showFilters && (
             <div className="mt-4 pt-4 border-t border-[#B8976B]/10 grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs font-bold text-[#1B5E4F]/70 uppercase tracking-wider mb-1.5">
-                  الحالة
-                </label>
+                <label className="block text-xs font-bold text-[#1B5E4F]/70 uppercase tracking-wider mb-1.5">نوع الدعم</label>
                 <div className="relative">
                   <select
                     value={filterStatus}
                     onChange={(e) => setFilterStatus(e.target.value)}
                     className="w-full appearance-none px-4 py-2.5 border-2 border-[#B8976B]/20 rounded-xl focus:border-[#1B5E4F] outline-none text-sm text-[#1B5E4F]"
                   >
-                    <option value="">جميع الحالات</option>
-                    <option value="Open">مفتوح</option>
-                    <option value="Won">مكتسب</option>
-                    <option value="Lost">خسارة</option>
+                    <option value="">جميع الأنواع</option>
+                    <option value="Open">مادي</option>
+                    <option value="Won">عيني</option>
                     <option value="OnHold">معلق</option>
                   </select>
-                  <ChevronDown
-                    size={14}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-[#B8976B] pointer-events-none"
-                  />
+                  <ChevronDown size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#B8976B] pointer-events-none" />
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-bold text-[#1B5E4F]/70 uppercase tracking-wider mb-1.5">
-                  الحد الأدنى للقيمة
-                </label>
+                <label className="block text-xs font-bold text-[#1B5E4F]/70 uppercase tracking-wider mb-1.5">الحد الأدنى للقيمة</label>
                 <input
-                  type="number"
-                  dir="ltr"
-                  value={minValue}
-                  onChange={(e) => setMinValue(e.target.value)}
+                  type="number" dir="ltr" value={minValue} onChange={(e) => setMinValue(e.target.value)}
                   className="w-full px-4 py-2.5 border-2 border-[#B8976B]/20 rounded-xl focus:border-[#1B5E4F] outline-none text-sm text-[#1B5E4F]"
                   placeholder="0"
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-[#1B5E4F]/70 uppercase tracking-wider mb-1.5">
-                  الحد الأقصى للقيمة
-                </label>
+                <label className="block text-xs font-bold text-[#1B5E4F]/70 uppercase tracking-wider mb-1.5">الحد الأقصى للقيمة</label>
                 <input
-                  type="number"
-                  dir="ltr"
-                  value={maxValue}
-                  onChange={(e) => setMaxValue(e.target.value)}
+                  type="number" dir="ltr" value={maxValue} onChange={(e) => setMaxValue(e.target.value)}
                   className="w-full px-4 py-2.5 border-2 border-[#B8976B]/20 rounded-xl focus:border-[#1B5E4F] outline-none text-sm text-[#1B5E4F]"
                   placeholder="∞"
                 />
@@ -997,9 +862,7 @@ const DonationsPage = () => {
         {isLoading && (
           <div className="flex flex-col items-center justify-center py-24 gap-4">
             <Loader2 className="text-[#1B5E4F] animate-spin" size={40} />
-            <p className="text-gray-400 text-sm font-medium">
-              جاري تحميل الصفقات...
-            </p>
+            <p className="text-gray-400 text-sm font-medium">جاري تحميل الدعومات...</p>
           </div>
         )}
         {isError && (
@@ -1007,9 +870,7 @@ const DonationsPage = () => {
             <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center">
               <AlertTriangle className="text-red-400" size={28} />
             </div>
-            <p className="text-gray-500 text-sm">
-              فشل تحميل البيانات: {(error as Error)?.message}
-            </p>
+            <p className="text-gray-500 text-sm">فشل تحميل البيانات: {(error as Error)?.message}</p>
             <button
               onClick={() => qc.invalidateQueries({ queryKey: QUERY_KEY })}
               className="px-4 py-2 bg-[#1B5E4F] text-white rounded-xl text-sm font-semibold"
@@ -1020,35 +881,19 @@ const DonationsPage = () => {
         )}
 
         {/* Grid */}
-        {!isLoading &&
-          !isError &&
-          (displayed.length > 0 ? (
+        {!isLoading && !isError && (
+          displayed.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {displayed.map((d) => (
                 <DealCard
                   key={d.id}
                   deal={d}
-                  leadTitle={
-                    d.leadId ? leadMap.get(d.leadId)?.title : undefined
-                  }
-                  assignedUserName={
-                    d.assignedToUserId
-                      ? userMap.get(d.assignedToUserId)?.name
-                      : undefined
-                  }
-                  onEdit={() => {
-                    setSelected(d);
-                    setFormError(null);
-                    setModal("edit");
-                  }}
-                  onDelete={() => {
-                    setSelected(d);
-                    setModal("delete");
-                  }}
-                  onView={() => {
-                    setSelected(d);
-                    setModal("view");
-                  }}
+                  charityTitle={d.leadId ? charityMap.get(d.leadId)?.title : undefined}
+                  donorName={d.customerId ? donorMap.get(d.customerId)?.fullName : undefined}
+                  assignedUserName={d.assignedToUserId ? userMap.get(d.assignedToUserId)?.name : undefined}
+                  onEdit={() => { setSelected(d); setFormError(null); setModal("edit"); }}
+                  onDelete={() => { setSelected(d); setModal("delete"); }}
+                  onView={() => { setSelected(d); setModal("view"); }}
                 />
               ))}
             </div>
@@ -1057,27 +902,24 @@ const DonationsPage = () => {
               <div className="w-20 h-20 mx-auto mb-5 rounded-full bg-[#F5F1E8] flex items-center justify-center">
                 <TrendingUp className="text-[#B8976B]" size={32} />
               </div>
-              <h3 className="text-xl font-bold text-[#1B5E4F] mb-1">
-                لا توجد صفقات
-              </h3>
-              <p className="text-gray-400 text-sm">
-                لم يتم العثور على صفقات مطابقة
-              </p>
+              <h3 className="text-xl font-bold text-[#1B5E4F] mb-1">لا توجد دعومات</h3>
+              <p className="text-gray-400 text-sm">لم يتم العثور على دعومات مطابقة</p>
             </div>
-          ))}
+          )
+        )}
       </div>
 
       {/* Modals */}
       {(modal === "add" || modal === "edit") && (
         <DealModal
           mode={modal}
-          initial={
-            modal === "edit" && selected ? toFormData(selected) : EMPTY_FORM
-          }
+          initial={modal === "edit" && selected ? toFormData(selected) : EMPTY_FORM}
           saving={isSaving}
           error={formError}
-          leads={leads}
-          leadsLoading={leadsLoading}
+          charities={charities}
+          charitiesLoading={charitiesLoading}
+          donors={donors}
+          donorsLoading={donorsLoading}
           systemUsers={systemUsers}
           usersLoading={usersLoading}
           onSave={handleSave}
@@ -1095,35 +937,19 @@ const DonationsPage = () => {
       )}
 
       {modal === "view" && selected && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          dir="rtl"
-        >
-          <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-            onClick={closeModal}
-          />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" dir="rtl">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={closeModal} />
           <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden">
-            <div
-              className={`bg-gradient-to-br ${STATUS_CFG[selected.status].card} p-6 relative`}
-            >
-              <button
-                onClick={closeModal}
-                className="absolute left-4 top-4 p-1.5 hover:bg-white/10 rounded-lg"
-              >
+            <div className={`bg-gradient-to-br ${STATUS_CFG[selected.status].card} p-6 relative`}>
+              <button onClick={closeModal} className="absolute left-4 top-4 p-1.5 hover:bg-white/10 rounded-lg">
                 <X className="text-white" size={18} />
               </button>
               <div className="flex items-center gap-4">
                 <div className="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center shadow-lg backdrop-blur-sm">
-                  {(() => {
-                    const Icon = STATUS_CFG[selected.status].Icon;
-                    return <Icon className="text-white" size={26} />;
-                  })()}
+                  {(() => { const Icon = STATUS_CFG[selected.status].Icon; return <Icon className="text-white" size={26} />; })()}
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-white leading-tight">
-                    {selected.title}
-                  </h2>
+                  <h2 className="text-xl font-bold text-white leading-tight">{selected.title}</h2>
                   <div className="flex gap-2 mt-1.5 flex-wrap">
                     <StatusBadge status={selected.status} />
                     <ValueTier value={selected.value} />
@@ -1133,62 +959,43 @@ const DonationsPage = () => {
             </div>
             <div className="p-6 grid grid-cols-2 gap-4 text-sm">
               {[
-                {
-                  label: "قيمة الصفقة",
-                  value: `${selected.value?.toLocaleString("ar-SA")} ريال`,
-                },
+                { label: "قيمة الدعم", value: `${selected.value?.toLocaleString("ar-SA")} ريال` },
                 {
                   label: "تاريخ الإغلاق",
-                  value: selected.closedDate
-                    ? new Date(selected.closedDate).toLocaleDateString("ar-SA")
-                    : "—",
+                  value: selected.closedDate ? new Date(selected.closedDate).toLocaleDateString("ar-SA") : "—",
                 },
                 {
-                  label: "العميل المحتمل",
-                  value: selected.leadId
-                    ? (leadMap.get(selected.leadId)?.title ?? "—")
-                    : "—",
+                  label: "الجمعية",
+                  value: selected.leadId ? (charityMap.get(selected.leadId)?.title ?? "—") : "—",
+                },
+                {
+                  label: "المانح",
+                  value: selected.customerId ? (donorMap.get(selected.customerId)?.fullName ?? "—") : "—",
                 },
                 {
                   label: "المسؤول",
-                  value: selected.assignedToUserId
-                    ? (userMap.get(selected.assignedToUserId)?.name ?? "—")
-                    : "—",
+                  value: selected.assignedToUserId ? (userMap.get(selected.assignedToUserId)?.name ?? "—") : "—",
                 },
                 { label: "الملاحظات", value: selected.notes || "—" },
               ].map(({ label, value }) => (
                 <div
                   key={label}
-                  className={
-                    ["الملاحظات", "العميل المحتمل", "المسؤول"].includes(label)
-                      ? "col-span-2"
-                      : ""
-                  }
+                  className={["الملاحظات", "الجمعية", "المانح", "المسؤول"].includes(label) ? "col-span-2" : ""}
                 >
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-[#B8976B] mb-0.5">
-                    {label}
-                  </p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-[#B8976B] mb-0.5">{label}</p>
                   <p className="font-semibold text-[#1B5E4F]">{value}</p>
                 </div>
               ))}
             </div>
             <div className="px-6 pb-6 flex gap-3">
               <button
-                onClick={() => {
-                  closeModal();
-                  setSelected(selected);
-                  setModal("edit");
-                }}
+                onClick={() => { closeModal(); setSelected(selected); setModal("edit"); }}
                 className="flex-1 py-2.5 rounded-xl border-2 border-[#1B5E4F]/20 text-[#1B5E4F] font-semibold text-sm hover:bg-[#F5F1E8] flex items-center justify-center gap-2"
               >
                 <Edit size={15} /> تعديل
               </button>
               <button
-                onClick={() => {
-                  closeModal();
-                  setSelected(selected);
-                  setModal("delete");
-                }}
+                onClick={() => { closeModal(); setSelected(selected); setModal("delete"); }}
                 className="py-2.5 px-4 rounded-xl border-2 border-red-100 text-red-500 hover:bg-red-50"
               >
                 <Trash2 size={15} />

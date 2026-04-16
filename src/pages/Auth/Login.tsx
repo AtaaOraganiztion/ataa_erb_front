@@ -39,8 +39,26 @@ const LoginPage = () => {
     const result = await login(data.email, data.password);
 
     if (result.success) {
-      // show error to user
-      navigate("/dashboard");
+      const userData = localStorage.getItem("user");
+
+      if (!userData) {
+        console.error("User not found in localStorage");
+        return;
+      }
+
+      const user = JSON.parse(userData);
+      const roles = user.roles || [];
+
+      if (roles.includes("Admin")) {
+        navigate("/dashboard");
+      } else if (roles.includes("HR")) {
+        navigate("/employees");
+      } else if (roles.includes("Financial")) {
+        navigate("/budgets");
+      } else {
+        navigate("/attendance");
+      }
+
       console.log("Login successful:", result);
     } else {
       // show error to user

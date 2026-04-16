@@ -208,12 +208,12 @@ const CustomerModal = ({
         <div className="bg-gradient-to-l from-[#1B5E4F] to-[#0F4F3E] px-8 py-6 flex items-center justify-between shrink-0">
           <div>
             <h2 className="text-xl font-bold text-white">
-              {mode === "add" ? "إضافة عميل جديد" : "تعديل بيانات العميل"}
+              {mode === "add" ? "إضافة مانح جديد" : "تعديل بيانات المانح"}
             </h2>
             <p className="text-white/60 text-sm mt-0.5">
               {mode === "add"
-                ? "أدخل بيانات العميل الجديد"
-                : "تحديث معلومات العميل"}
+                ? "أدخل بيانات المانح الجديد"
+                : "تحديث معلومات المانح"}
             </p>
           </div>
           <button
@@ -242,7 +242,7 @@ const CustomerModal = ({
                 <label className={labelCls}>الاسم الكامل</label>
                 <input
                   className={inputCls}
-                  placeholder="اسم العميل"
+                  placeholder="اسم المانح"
                   value={form.fullName}
                   onChange={(e) => set("fullName", e.target.value)}
                 />
@@ -271,17 +271,17 @@ const CustomerModal = ({
             </div>
           </section>
 
-          {/* Company Info */}
+          {/* Org Info */}
           <section>
             <h3 className="text-sm font-bold text-[#B8976B] uppercase tracking-widest mb-4 flex items-center gap-2">
-              <span className="w-4 h-px bg-[#B8976B]" /> بيانات الشركة
+              <span className="w-4 h-px bg-[#B8976B]" /> بيانات المنظمة
             </h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className={labelCls}>الشركة</label>
+                <label className={labelCls}>الجهة / المنظمة</label>
                 <input
                   className={inputCls}
-                  placeholder="اسم الشركة"
+                  placeholder="اسم الجهة أو المنظمة"
                   value={form.company}
                   onChange={(e) => set("company", e.target.value)}
                 />
@@ -323,7 +323,7 @@ const CustomerModal = ({
                 <textarea
                   className={inputCls + " resize-none"}
                   rows={3}
-                  placeholder="أي ملاحظات إضافية..."
+                  placeholder="أي ملاحظات إضافية عن المانح..."
                   value={form.notes}
                   onChange={(e) => set("notes", e.target.value)}
                 />
@@ -337,7 +337,7 @@ const CustomerModal = ({
               <span className="w-4 h-px bg-[#B8976B]" /> التعيين
             </h3>
             <div>
-              <label className={labelCls}>المسؤول عن العميل</label>
+              <label className={labelCls}>المسؤول عن المانح</label>
               <div className="relative">
                 {usersLoading ? (
                   <div className="w-full px-4 py-2.5 border-2 border-[#B8976B]/30 rounded-xl bg-gray-50 flex items-center gap-2 text-gray-400 text-sm">
@@ -387,7 +387,7 @@ const CustomerModal = ({
             ) : (
               <CheckCircle size={16} />
             )}
-            {mode === "add" ? "إضافة العميل" : "حفظ التعديلات"}
+            {mode === "add" ? "إضافة المانح" : "حفظ التعديلات"}
           </button>
         </div>
       </div>
@@ -422,7 +422,7 @@ const DeleteModal = ({
       </div>
       <h3 className="text-xl font-bold text-gray-800 mb-2">تأكيد الحذف</h3>
       <p className="text-gray-500 text-sm mb-6">
-        هل أنت متأكد من حذف العميل{" "}
+        هل أنت متأكد من حذف المانح{" "}
         <span className="font-bold text-red-600">{name}</span>؟
         <br />
         <span className="text-xs">هذا الإجراء لا يمكن التراجع عنه.</span>
@@ -451,7 +451,7 @@ const DeleteModal = ({
   </div>
 );
 
-// ─── Customer Card ─────────────────────────────────────────────────────────────
+// ─── Donor Card ───────────────────────────────────────────────────────────────
 
 const CustomerCard = ({
   customer,
@@ -637,7 +637,6 @@ const DonnersPage = () => {
   const customers: Customer[] = normalize(raw);
   const systemUsers: SystemUser[] = normalizeUsers(usersRaw);
 
-  // Lookup map for assigned user display
   const userMap = new Map<string, SystemUser>(
     systemUsers.map((u) => [u.id, u]),
   );
@@ -745,10 +744,10 @@ const DonnersPage = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold bg-gradient-to-l from-[#1B5E4F] to-[#0F4F3E] bg-clip-text text-transparent">
-              قاعدة العملاء
+              قاعدة المانحين
             </h1>
             <p className="text-gray-500 text-sm mt-1">
-              مرحباً{user?.name ? ` ${user.name}،` : ","} إجمالي العملاء:{" "}
+              مرحباً{user?.name ? ` ${user.name}،` : ","} إجمالي المانحين:{" "}
               <span className="font-bold text-[#1B5E4F]">
                 {displayed.length}
               </span>
@@ -763,7 +762,7 @@ const DonnersPage = () => {
             className="flex items-center gap-2 px-6 py-3 bg-gradient-to-l from-[#1B5E4F] to-[#0F4F3E] text-white rounded-2xl font-semibold shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all self-start sm:self-auto"
           >
             <UserPlus size={18} />
-            إضافة عميل
+            إضافة مانح
           </button>
         </div>
 
@@ -812,7 +811,7 @@ const DonnersPage = () => {
               />
               <input
                 type="text"
-                placeholder="بحث بالاسم، البريد، الشركة..."
+                placeholder="بحث بالاسم، البريد، الجهة..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full pr-11 pl-4 py-2.5 border-2 border-[#B8976B]/20 rounded-xl focus:border-[#1B5E4F] focus:ring-2 focus:ring-[#1B5E4F]/10 outline-none transition-all text-sm text-[#1B5E4F]"
@@ -851,11 +850,11 @@ const DonnersPage = () => {
               </div>
               <div>
                 <label className="block text-xs font-bold text-[#1B5E4F]/70 uppercase tracking-wider mb-1.5">
-                  الشركة
+                  الجهة / المنظمة
                 </label>
                 <input
                   className="w-full px-4 py-2.5 border-2 border-[#B8976B]/20 rounded-xl focus:border-[#1B5E4F] outline-none text-sm text-[#1B5E4F]"
-                  placeholder="تصفية بالشركة..."
+                  placeholder="تصفية بالجهة..."
                   value={filterCompany}
                   onChange={(e) => setFilterCompany(e.target.value)}
                 />
@@ -869,7 +868,7 @@ const DonnersPage = () => {
           <div className="flex flex-col items-center justify-center py-24 gap-4">
             <Loader2 className="text-[#1B5E4F] animate-spin" size={40} />
             <p className="text-gray-400 text-sm font-medium">
-              جاري تحميل بيانات العملاء...
+              جاري تحميل بيانات المانحين...
             </p>
           </div>
         )}
@@ -930,7 +929,7 @@ const DonnersPage = () => {
                 لا توجد نتائج
               </h3>
               <p className="text-gray-400 text-sm">
-                لم يتم العثور على عملاء مطابقين
+                لم يتم العثور على مانحين مطابقين
               </p>
             </div>
           ))}
@@ -1001,7 +1000,7 @@ const DonnersPage = () => {
               {[
                 { label: "البريد الإلكتروني", value: selected.email },
                 { label: "رقم الهاتف", value: selected.phone },
-                { label: "الشركة", value: selected.company },
+                { label: "الجهة / المنظمة", value: selected.company },
                 { label: "العنوان", value: selected.address },
                 {
                   label: "المسؤول",

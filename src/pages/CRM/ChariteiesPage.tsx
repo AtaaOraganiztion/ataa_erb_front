@@ -21,7 +21,6 @@ import {
   Clock,
   Award,
   User,
-  UserPlus,
   Phone,
   Mail,
   Building2,
@@ -92,6 +91,8 @@ const EMPTY_FORM: LeadFormData = {
   assignedToUserId: "",
 };
 
+const TITLE_OPTIONS = ["ظابط اتصال", "مدير تنفيذى", "رئيس مجلس ادارة"];
+
 const API_BASE = import.meta.env.VITE_API_URL;
 const QUERY_KEY = ["leads"] as const;
 const USERS_QUERY_KEY = ["system-users"] as const;
@@ -140,7 +141,6 @@ const fetchLeads = (params: Record<string, string>) => {
 const fetchUsers = () =>
   authFetch(`${API_BASE}/Api/V1/users/get?PageIndex=1&PageSize=100`);
 
-// Build request body — no customerId, empty strings become null
 const buildLeadBody = (data: LeadFormData) => ({
   title: data.title,
   fullName: data.fullName || null,
@@ -171,22 +171,6 @@ const apiUpdate = ({ id, data }: { id: string; data: LeadFormData }) =>
 const apiDelete = (id: string) =>
   authFetch(`${API_BASE}/Api/V1/Lead/${id}`, { method: "DELETE" });
 
-// Convert lead to customer using all available lead contact data
-const apiConvertToCustomer = (lead: Lead) =>
-  authFetch(`${API_BASE}/Api/V1/Customer/Add`, {
-    method: "POST",
-    body: JSON.stringify({
-      fullName: lead.fullName || lead.title,
-      email: lead.email || null,
-      phone: lead.phone || null,
-      company: lead.company || null,
-      address: lead.address || null,
-      status: "Active",
-      notes: lead.notes || null,
-      assignedToUserId: lead.assignedToUserId || null,
-    }),
-  });
-
 const normalize = (raw: unknown): Lead[] =>
   Array.isArray(raw) ? raw : ((raw as any)?.data ?? (raw as any)?.items ?? []);
 
@@ -207,7 +191,7 @@ const STATUS_CFG: Record<
     dot: "bg-blue-500",
   },
   Contacted: {
-    label: " قديم",
+    label: "قديم",
     cls: "bg-purple-50 text-purple-600 border-purple-200",
     dot: "bg-purple-500",
   },
@@ -219,19 +203,19 @@ const STATUS_CFG: Record<
   Lost: {
     label: "",
     cls: "",
-    dot: ""
+    dot: "",
   },
   Won: {
     label: "",
     cls: "",
-    dot: ""
-  }
+    dot: "",
+  },
 };
 
 const STAGE_CFG: Record<LeadStage, { label: string; step: number }> = {
-  Prospecting: { label: "استكشاف", step: 1 },
-  Qualification: { label: "تأهيل", step: 2 },
-  Proposal: { label: "عرض", step: 3 },
+  Prospecting: { label: "جارى التواصل", step: 1 },
+  Qualification: { label: "العقد سارى", step: 2 },
+  Proposal: { label: "العقد انهى", step: 3 },
   Negotiation: { label: "تفاوض", step: 4 },
   ClosedWon: { label: "مغلق / فوز", step: 5 },
   ClosedLost: { label: "مغلق / خسارة", step: 5 },
@@ -239,6 +223,7 @@ const STAGE_CFG: Record<LeadStage, { label: string; step: number }> = {
 
 const StatusBadge = ({ status }: { status: LeadStatus }) => {
   const cfg = STATUS_CFG[status];
+  if (!cfg.label) return null;
   return (
     <span
       className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${cfg.cls}`}
@@ -335,12 +320,12 @@ const LeadModal = ({
         <div className="bg-gradient-to-l from-[#1B5E4F] to-[#0F4F3E] px-8 py-6 flex items-center justify-between shrink-0">
           <div>
             <h2 className="text-xl font-bold text-white">
-              {mode === "add" ? "إضافة عميل محتمل" : "تعديل العميل المحتمل"}
+              {mode === "add" ? "إضافة جمعية" : "تعديل الجمعية"}
             </h2>
             <p className="text-white/60 text-sm mt-0.5">
               {mode === "add"
-                ? "أدخل بيانات العميل المحتمل الجديد"
-                : "تحديث بيانات الفرصة"}
+                ? "أدخل بيانات الجمعية الجديدة"
+                : "تحديث بيانات الجمعية"}
             </p>
           </div>
           <button
@@ -359,28 +344,40 @@ const LeadModal = ({
             </div>
           )}
 
-          {/* Opportunity Info */}
+          {/* Basic Info */}
           <section>
             <h3 className="text-sm font-bold text-[#B8976B] uppercase tracking-widest mb-4 flex items-center gap-2">
-              <span className="w-4 h-px bg-[#B8976B]" /> معلومات الفرصة
+              <span className="w-4 h-px bg-[#B8976B]" /> معلومات الجمعية
             </h3>
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2">
                 <label className={labelCls}>
-                  عنوان الفرصة <span className="text-red-500">*</span>
+                  صفة ممثل الجهة <span className="text-red-500">*</span>
                 </label>
-                <input
-                  className={inputCls}
-                  placeholder="عنوان وصفي للعميل المحتمل"
-                  value={form.title}
-                  onChange={(e) => set("title", e.target.value)}
-                />
+                <div className="relative">
+                  <select
+                    className={selectCls}
+                    value={form.title}
+                    onChange={(e) => set("title", e.target.value)}
+                  >
+                    <option value="">اختر الصفة</option>
+                    {TITLE_OPTIONS.map((opt) => (
+                      <option key={opt} value={opt}>
+                        {opt}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown
+                    size={14}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-[#B8976B] pointer-events-none"
+                  />
+                </div>
               </div>
               <div className="col-span-2">
-                <label className={labelCls}>الاسم الكامل</label>
+                <label className={labelCls}>ممثل الجهة</label>
                 <input
                   className={inputCls}
-                  placeholder="اسم العميل المحتمل"
+                  placeholder="اسم ممثل الجهة"
                   value={form.fullName}
                   onChange={(e) => set("fullName", e.target.value)}
                 />
@@ -459,7 +456,7 @@ const LeadModal = ({
                 </div>
               </div>
               <div>
-                <label className={labelCls}>الشركة</label>
+                <label className={labelCls}>الجهة / المنظمة</label>
                 <div className="relative">
                   <Building2
                     size={14}
@@ -467,7 +464,7 @@ const LeadModal = ({
                   />
                   <input
                     className={inputCls + " pr-9"}
-                    placeholder="اسم الشركة"
+                    placeholder="اسم الجهة أو المنظمة"
                     value={form.company}
                     onChange={(e) => set("company", e.target.value)}
                   />
@@ -506,7 +503,7 @@ const LeadModal = ({
                     onChange={(e) => set("status", e.target.value)}
                   >
                     <option value="New">جديد</option>
-                    <option value="Contacted"> قديم</option>
+                    <option value="Contacted">قديم</option>
                     <option value="Qualified">محظورة</option>
                   </select>
                   <ChevronDown
@@ -525,7 +522,7 @@ const LeadModal = ({
                   >
                     <option value="Prospecting">جارى التواصل</option>
                     <option value="Qualification">العقد سارى</option>
-                    <option value="Proposal"> العقد انهى</option>
+                    <option value="Proposal">العقد انهى</option>
                   </select>
                   <ChevronDown
                     size={14}
@@ -551,7 +548,7 @@ const LeadModal = ({
               <span className="w-4 h-px bg-[#B8976B]" /> التعيين
             </h3>
             <div>
-              <label className={labelCls}>المسؤول عن الفرصة</label>
+              <label className={labelCls}>المسؤول عن الجمعية</label>
               <div className="relative">
                 {usersLoading ? (
                   <div className="w-full px-4 py-2.5 border-2 border-[#B8976B]/30 rounded-xl bg-gray-50 flex items-center gap-2 text-gray-400 text-sm">
@@ -615,7 +612,7 @@ const LeadModal = ({
             ) : (
               <CheckCircle size={16} />
             )}
-            {mode === "add" ? "إضافة العميل المحتمل" : "حفظ التعديلات"}
+            {mode === "add" ? "إضافة الجمعية" : "حفظ التعديلات"}
           </button>
         </div>
       </div>
@@ -650,7 +647,7 @@ const DeleteModal = ({
       </div>
       <h3 className="text-xl font-bold text-gray-800 mb-2">تأكيد الحذف</h3>
       <p className="text-gray-500 text-sm mb-6">
-        هل أنت متأكد من حذف{" "}
+        هل أنت متأكد من حذف الجمعية{" "}
         <span className="font-bold text-red-600">{title}</span>؟
         <br />
         <span className="text-xs">هذا الإجراء لا يمكن التراجع عنه.</span>
@@ -679,103 +676,6 @@ const DeleteModal = ({
   </div>
 );
 
-// ─── Convert Modal ────────────────────────────────────────────────────────────
-
-const ConvertModal = ({
-  lead,
-  converting,
-  error,
-  onConfirm,
-  onClose,
-}: {
-  lead: Lead;
-  converting: boolean;
-  error?: string | null;
-  onConfirm: () => void;
-  onClose: () => void;
-}) => (
-  <div
-    className="fixed inset-0 z-50 flex items-center justify-center p-4"
-    dir="rtl"
-  >
-    <div
-      className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-      onClick={!converting ? onClose : undefined}
-    />
-    <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl p-8 text-center">
-      <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-50 flex items-center justify-center">
-        <UserPlus className="text-emerald-600" size={32} />
-      </div>
-      <h3 className="text-xl font-bold text-gray-800 mb-2">تحويل إلى عميل</h3>
-      <p className="text-gray-500 text-sm mb-4">
-        هل تريد تحويل الفرصة{" "}
-        <span className="font-bold text-[#1B5E4F]">{lead.title}</span> إلى عميل
-        جديد؟
-      </p>
-
-      {/* Data preview */}
-      <div className="bg-[#F5F1E8]/60 rounded-2xl p-4 mb-5 text-right space-y-1.5">
-        <div className="flex items-center gap-2 text-xs text-[#1B5E4F]">
-          <User size={12} className="text-[#B8976B] shrink-0" />
-          <span className="font-semibold">{lead.fullName || lead.title}</span>
-        </div>
-        {lead.email && (
-          <div className="flex items-center gap-2 text-xs text-[#1B5E4F]">
-            <Mail size={12} className="text-[#B8976B] shrink-0" />
-            <span>{lead.email}</span>
-          </div>
-        )}
-        {lead.phone && (
-          <div className="flex items-center gap-2 text-xs text-[#1B5E4F]">
-            <Phone size={12} className="text-[#B8976B] shrink-0" />
-            <span>{lead.phone}</span>
-          </div>
-        )}
-        {lead.company && (
-          <div className="flex items-center gap-2 text-xs text-[#1B5E4F]">
-            <Building2 size={12} className="text-[#B8976B] shrink-0" />
-            <span>{lead.company}</span>
-          </div>
-        )}
-        {!lead.email && !lead.phone && !lead.company && (
-          <p className="text-xs text-gray-400">
-            لا توجد بيانات تواصل — أضفها عبر تعديل الفرصة أولاً.
-          </p>
-        )}
-      </div>
-
-      {error && (
-        <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-xs mb-4 text-right">
-          <AlertTriangle size={14} className="shrink-0" />
-          <span>{error}</span>
-        </div>
-      )}
-
-      <div className="flex gap-3">
-        <button
-          onClick={onClose}
-          disabled={converting}
-          className="flex-1 py-2.5 rounded-xl border-2 border-gray-200 text-gray-600 font-semibold text-sm hover:bg-gray-50 disabled:opacity-50"
-        >
-          إلغاء
-        </button>
-        <button
-          onClick={onConfirm}
-          disabled={converting}
-          className="flex-1 py-2.5 rounded-xl bg-gradient-to-l from-emerald-600 to-emerald-700 text-white font-semibold text-sm flex items-center justify-center gap-2 hover:shadow-lg transition-all disabled:opacity-60"
-        >
-          {converting ? (
-            <Loader2 size={16} className="animate-spin" />
-          ) : (
-            <UserPlus size={16} />
-          )}
-          تحويل
-        </button>
-      </div>
-    </div>
-  </div>
-);
-
 // ─── Lead Card ────────────────────────────────────────────────────────────────
 
 const LeadCard = ({
@@ -784,14 +684,12 @@ const LeadCard = ({
   onEdit,
   onDelete,
   onView,
-  onConvert,
 }: {
   lead: Lead;
   assignedUserName?: string;
   onEdit: () => void;
   onDelete: () => void;
   onView: () => void;
-  onConvert: () => void;
 }) => {
   const [open, setOpen] = useState(false);
   return (
@@ -839,12 +737,6 @@ const LeadCard = ({
                     label: "تعديل",
                     color: "text-blue-600",
                     action: onEdit,
-                  },
-                  {
-                    icon: UserPlus,
-                    label: "تحويل إلى عميل",
-                    color: "text-emerald-600",
-                    action: onConvert,
                   },
                   {
                     icon: Trash2,
@@ -927,10 +819,10 @@ const LeadCard = ({
         </button>
         <span className="w-px bg-[#B8976B]/15 self-stretch" />
         <button
-          onClick={onConvert}
-          className="flex-1 flex items-center justify-center gap-1.5 py-3 text-emerald-600 text-xs font-semibold hover:bg-emerald-50 transition-colors"
+          onClick={onEdit}
+          className="flex-1 flex items-center justify-center gap-1.5 py-3 text-blue-600 text-xs font-semibold hover:bg-blue-50 transition-colors"
         >
-          <UserPlus size={14} /> تحويل لعميل
+          <Edit size={14} /> تعديل
         </button>
       </div>
     </div>
@@ -947,13 +839,11 @@ const ChariteiesPage = () => {
   const [filterStatus, setFilterStatus] = useState("");
   const [filterStage, setFilterStage] = useState("");
   const [showFilters, setShowFilters] = useState(false);
-  const [modal, setModal] = useState<
-    null | "add" | "edit" | "delete" | "view" | "convert"
-  >(null);
+  const [modal, setModal] = useState<null | "add" | "edit" | "delete" | "view">(
+    null,
+  );
   const [selected, setSelected] = useState<Lead | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
-  const [convertError, setConvertError] = useState<string | null>(null);
-  const [convertSuccess, setConvertSuccess] = useState<string | null>(null);
 
   const serverParams: Record<string, string> = {};
   if (filterStatus) serverParams.Status = filterStatus;
@@ -990,7 +880,6 @@ const ChariteiesPage = () => {
     setModal(null);
     setSelected(null);
     setFormError(null);
-    setConvertError(null);
   };
 
   const addMutation = useMutation({
@@ -1063,20 +952,6 @@ const ChariteiesPage = () => {
     onSettled: () => qc.invalidateQueries({ queryKey: QUERY_KEY }),
   });
 
-  const convertMutation = useMutation({
-    mutationFn: apiConvertToCustomer,
-    onSuccess: (_, lead) => {
-      closeModal();
-      setConvertSuccess(`تم تحويل "${lead.title}" إلى عميل بنجاح`);
-      setTimeout(() => setConvertSuccess(null), 5000);
-      qc.invalidateQueries({ queryKey: ["customers"] });
-    },
-    onError: (e) => {
-      // Keep the convert modal open, show error inside it
-      setConvertError((e as Error).message);
-    },
-  });
-
   const toFormData = (l: Lead): LeadFormData => ({
     title: l.title,
     fullName: l.fullName ?? "",
@@ -1094,7 +969,7 @@ const ChariteiesPage = () => {
 
   const handleSave = (data: LeadFormData) => {
     if (!data.title.trim()) {
-      setFormError("عنوان الفرصة مطلوب");
+      setFormError("صفة ممثل الجهة مطلوبة");
       return;
     }
     setFormError(null);
@@ -1118,7 +993,7 @@ const ChariteiesPage = () => {
               الجمعيات
             </h1>
             <p className="text-gray-500 text-sm mt-1">
-              مرحباً{user?.name ? ` ${user.name}،` : ","} إجمالي الفرص:{" "}
+              مرحباً{user?.name ? ` ${user.name}،` : ","} إجمالي الجمعيات:{" "}
               <span className="font-bold text-[#1B5E4F]">
                 {displayed.length}
               </span>
@@ -1132,17 +1007,9 @@ const ChariteiesPage = () => {
             }}
             className="flex items-center gap-2 px-6 py-3 bg-gradient-to-l from-[#1B5E4F] to-[#0F4F3E] text-white rounded-2xl font-semibold shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all self-start sm:self-auto"
           >
-            <Plus size={18} /> إضافة عميل محتمل
+            <Plus size={18} /> إضافة جمعية
           </button>
         </div>
-
-        {/* Success Toast */}
-        {convertSuccess && (
-          <div className="flex items-center gap-3 p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-700 text-sm font-semibold shadow-sm">
-            <CheckCircle size={18} className="shrink-0" />
-            {convertSuccess}
-          </div>
-        )}
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4">
@@ -1156,7 +1023,7 @@ const ChariteiesPage = () => {
               lbl: "text-[#1B5E4F]/60",
             },
             {
-              label: "فرص مكتسبة",
+              label: "جمعيات نشطة",
               value: wonCount,
               Icon: Award,
               cls: "from-emerald-50 to-emerald-100/50 border-emerald-200/60",
@@ -1164,7 +1031,7 @@ const ChariteiesPage = () => {
               lbl: "text-emerald-600",
             },
             {
-              label: "فرص جديدة",
+              label: "جمعيات جديدة",
               value: newCount,
               Icon: Clock,
               cls: "from-blue-50 to-blue-100/50 border-blue-200/60",
@@ -1195,7 +1062,7 @@ const ChariteiesPage = () => {
               />
               <input
                 type="text"
-                placeholder="بحث في العملاء المحتملين..."
+                placeholder="بحث في الجمعيات..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full pr-11 pl-4 py-2.5 border-2 border-[#B8976B]/20 rounded-xl focus:border-[#1B5E4F] focus:ring-2 focus:ring-[#1B5E4F]/10 outline-none transition-all text-sm text-[#1B5E4F]"
@@ -1222,10 +1089,8 @@ const ChariteiesPage = () => {
                   >
                     <option value="">جميع الحالات</option>
                     <option value="New">جديد</option>
-                    <option value="Contacted">تم التواصل</option>
-                    <option value="Qualified">مؤهل</option>
-                    <option value="Won">مكسب</option>
-                    <option value="Lost">خسارة</option>
+                    <option value="Contacted">قديم</option>
+                    <option value="Qualified">محظورة</option>
                   </select>
                   <ChevronDown
                     size={14}
@@ -1244,12 +1109,9 @@ const ChariteiesPage = () => {
                     className="w-full appearance-none px-4 py-2.5 border-2 border-[#B8976B]/20 rounded-xl focus:border-[#1B5E4F] outline-none text-sm text-[#1B5E4F]"
                   >
                     <option value="">جميع المراحل</option>
-                    <option value="Prospecting">استكشاف</option>
-                    <option value="Qualification">تأهيل</option>
-                    <option value="Proposal">عرض سعر</option>
-                    <option value="Negotiation">تفاوض</option>
-                    <option value="ClosedWon">مغلق / فوز</option>
-                    <option value="ClosedLost">مغلق / خسارة</option>
+                    <option value="Prospecting">جارى التواصل</option>
+                    <option value="Qualification">العقد سارى</option>
+                    <option value="Proposal">العقد انهى</option>
                   </select>
                   <ChevronDown
                     size={14}
@@ -1266,7 +1128,7 @@ const ChariteiesPage = () => {
           <div className="flex flex-col items-center justify-center py-24 gap-4">
             <Loader2 className="text-[#1B5E4F] animate-spin" size={40} />
             <p className="text-gray-400 text-sm font-medium">
-              جاري تحميل العملاء المحتملين...
+              جاري تحميل الجمعيات...
             </p>
           </div>
         )}
@@ -1314,11 +1176,6 @@ const ChariteiesPage = () => {
                       setSelected(l);
                       setModal("view");
                     }}
-                    onConvert={() => {
-                      setSelected(l);
-                      setConvertError(null);
-                      setModal("convert");
-                    }}
                   />
                 );
               })}
@@ -1329,10 +1186,10 @@ const ChariteiesPage = () => {
                 <Target className="text-[#B8976B]" size={32} />
               </div>
               <h3 className="text-xl font-bold text-[#1B5E4F] mb-1">
-                لا توجد فرص
+                لا توجد جمعيات
               </h3>
               <p className="text-gray-400 text-sm">
-                لم يتم العثور على عملاء محتملين مطابقين
+                لم يتم العثور على جمعيات مطابقة للبحث
               </p>
             </div>
           ))}
@@ -1359,19 +1216,6 @@ const ChariteiesPage = () => {
           title={selected.title}
           deleting={deleteMutation.isPending}
           onConfirm={() => deleteMutation.mutate(selected.id)}
-          onClose={closeModal}
-        />
-      )}
-
-      {modal === "convert" && selected && (
-        <ConvertModal
-          lead={selected}
-          converting={convertMutation.isPending}
-          error={convertError}
-          onConfirm={() => {
-            setConvertError(null);
-            convertMutation.mutate(selected);
-          }}
           onClose={closeModal}
         />
       )}
@@ -1455,7 +1299,7 @@ const ChariteiesPage = () => {
                   span: false,
                 },
                 {
-                  label: "الشركة",
+                  label: "الجهة / المنظمة",
                   value: selected.company || "—",
                   span: false,
                 },
@@ -1491,19 +1335,6 @@ const ChariteiesPage = () => {
                 className="flex-1 py-2.5 rounded-xl border-2 border-[#1B5E4F]/20 text-[#1B5E4F] font-semibold text-sm hover:bg-[#F5F1E8] flex items-center justify-center gap-2"
               >
                 <Edit size={15} /> تعديل
-              </button>
-              <button
-                onClick={() => {
-                  closeModal();
-                  setTimeout(() => {
-                    setSelected(selected);
-                    setConvertError(null);
-                    setModal("convert");
-                  }, 0);
-                }}
-                className="flex-1 py-2.5 rounded-xl border-2 border-emerald-200 text-emerald-600 font-semibold text-sm hover:bg-emerald-50 flex items-center justify-center gap-2"
-              >
-                <UserPlus size={15} /> تحويل لعميل
               </button>
               <button
                 onClick={() => {
