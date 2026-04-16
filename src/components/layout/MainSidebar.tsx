@@ -1,7 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronDown, ChevronRight, LogOut, User } from "lucide-react";
-import { NAV_CONFIG, type SubItem } from "../../lib/utiltis";
+import {
+  NAV_CONFIG,
+  type SubItem,
+  hasAccess,
+  type UserRole,
+} from "../../lib/utiltis";
 import logo from "../../assets/Logo2.jpg";
 import { useAuth } from "../../context/AuthContext";
 
@@ -13,11 +18,13 @@ interface ModernSidebarProps {
 const MainSidebar = ({ isOpen, onClose }: ModernSidebarProps) => {
   const [activePage, setActivePage] = useState("dashboard");
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>(
-    {}
+    {},
   );
-
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const userRoles = (user?.roles || []) as UserRole[];
+
+  // Get user roles from auth context (adjust according to your user object)
 
   const toggleExpanded = (itemId: string) => {
     setExpandedItems((prev) => ({
@@ -31,6 +38,24 @@ const MainSidebar = ({ isOpen, onClose }: ModernSidebarProps) => {
     navigate("/");
   };
 
+  // Filter navigation based on user roles
+  const filteredNav = NAV_CONFIG.filter((category) =>
+    hasAccess(userRoles, category.roles),
+  )
+    .map((category) => ({
+      ...category,
+      items: category.items
+        .filter((item) => hasAccess(userRoles, item.roles))
+        .map((item) => ({
+          ...item,
+          subItems: item.subItems?.filter((sub) =>
+            hasAccess(userRoles, sub.roles),
+          ),
+        }))
+        .filter((item) => !item.subItems || item.subItems.length > 0), // Remove items with no visible sub-items
+    }))
+    .filter((category) => category.items.length > 0); // Remove empty categories
+
   const NavItem = ({
     item,
     isSubItem = false,
@@ -43,7 +68,7 @@ const MainSidebar = ({ isOpen, onClose }: ModernSidebarProps) => {
     const Icon = item.icon;
     const hasSubItems = item.subItems && item.subItems.length > 0;
     const isExpanded = expandedItems[item.id];
-    const isActive = activePage === item.page;
+    const isActive = activePage === (item.page || item.id);
 
     const handleClick = () => {
       if (hasSubItems) {
@@ -54,7 +79,7 @@ const MainSidebar = ({ isOpen, onClose }: ModernSidebarProps) => {
       if (item.url) {
         setActivePage(item.page || item.id);
 
-        // collapse parent when sub item clicked
+        // Collapse parent when clicking a sub-item
         if (isSubItem && parentId) {
           setExpandedItems((prev) => ({
             ...prev,
@@ -178,9 +203,7 @@ const MainSidebar = ({ isOpen, onClose }: ModernSidebarProps) => {
                   <h1 className="text-xl font-bold text-[#1B5E4F]">
                     استدامة العطاء الدولية
                   </h1>
-                  <p className="text-xs text-[#4A4A4A]">
-                    لوحة التحكم الشاملة
-                  </p>
+                  <p className="text-xs text-[#4A4A4A]">لوحة التحكم الشاملة</p>
                 </div>
               </div>
 
@@ -195,45 +218,59 @@ const MainSidebar = ({ isOpen, onClose }: ModernSidebarProps) => {
 
           {/* Navigation */}
           <div className="flex-1 p-4 pb-6">
-            {NAV_CONFIG.map((category) => (
-              <div key={category.id} className="mb-6">
-                <div className="flex items-center gap-2 mb-3 px-3">
-                  <div className="w-8 h-px bg-gradient-to-r from-[#B8976B] to-transparent" />
-                  <h3 className="text-xs font-bold text-[#1B5E4F] uppercase">
-                    {category.title}
-                  </h3>
-                </div>
-
-                <div className="space-y-1">
-                  {category.items.map((item) => (
-                    <NavItem key={item.id} item={item} />
-                  ))}
-                </div>
+            {filteredNav.length === 0 ? (
+              <div className="text-center py-10 text-[#4A4A4A]">
+                لا توجد صلاحيات لعرض القائمة
               </div>
-            ))}
+            ) : (
+              filteredNav.map((category) => (
+                <div key={category.id} className="mb-6">
+                  <div className="flex items-center gap-2 mb-3 px-3">
+                    <div className="w-8 h-px bg-gradient-to-r from-[#B8976B] to-transparent" />
+                    <h3 className="text-xs font-bold text-[#1B5E4F] uppercase">
+                      {category.title}
+                    </h3>
+                  </div>
+
+                  <div className="space-y-1">
+                    {category.items.map((item) => (
+                      <NavItem key={item.id} item={item} />
+                    ))}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
 
-          {/* Profile */}
+          {/* Profile & Logout */}
           <div className="border-t-2 border-[#B8976B]/20 p-4">
             {user && (
               <div className="space-y-3">
                 <div className="flex items-center gap-3 p-3 bg-white rounded-xl shadow-sm">
-                  <div className="w-12 h-12 rounded-full bg-[#1B5E4F] flex items-center justify-center text-white">
+                  <div className="w-12 h-12 rounded-full bg-[#1B5E4F] flex items-center justify-center text-white overflow-hidden">
                     {user.avatar ? (
                       <img
                         src={user.avatar}
-                        className="w-full h-full rounded-full object-cover"
+                        className="w-full h-full object-cover"
+                        alt="avatar"
                       />
                     ) : (
                       <User size={20} />
                     )}
                   </div>
 
-                  <div className="flex-1">
-                    <p className="font-bold text-[#1B5E4F]">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-[#1B5E4F] truncate">
                       {user.fullName ?? user.email}
                     </p>
-                    <p className="text-xs text-[#4A4A4A]">{user.email}</p>
+                    <p className="text-xs text-[#4A4A4A] truncate">
+                      {user.email}
+                    </p>
+                    {user.roles && user.roles.length > 0 && (
+                      <p className="text-[10px] text-[#B8976B] mt-0.5">
+                        {user.roles.join(" • ")}
+                      </p>
+                    )}
                   </div>
                 </div>
 

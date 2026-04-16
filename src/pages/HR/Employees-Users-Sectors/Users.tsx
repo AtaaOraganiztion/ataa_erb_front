@@ -22,13 +22,22 @@ import {
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+/**
+ * ROLE_OPTIONS: The `value` is what gets sent to the backend inside the `nid` field.
+ * The backend expects the field to be named `nid`, but it carries the user's role.
+ */
+const ROLE_OPTIONS = [
+  { label: "مصمم", value: "Designer" },
+  { label: "مستخدم", value: "User" },
+];
+
 interface SystemUser {
   id: string;
   name: string;
   email: string;
   phoneNumber?: string;
   age?: number;
-  nid?: string;
+  nid?: string;        // backend field name; stores the role ("Designer" | "User")
   gender?: "Male" | "Female";
   roles?: string[];
 }
@@ -38,7 +47,7 @@ interface UserFormData {
   email: string;
   phoneNumber: string;
   age: number | string;
-  nid: string;
+  nid: string;          // role value sent to backend
   gender: "Male" | "Female";
   password: string;
 }
@@ -47,7 +56,7 @@ interface UserEditData {
   name: string;
   phoneNumber: string;
   email: string;
-  nid: string;
+  nid: string;          // role value sent to backend
   age: number | string;
   gender: "Male" | "Female";
 }
@@ -100,7 +109,7 @@ const apiRegister = (data: UserFormData) =>
       email: data.email,
       phoneNumber: data.phoneNumber || null,
       age: data.age !== "" ? Number(data.age) : null,
-      nid: data.nid || null,
+      nid: data.nid || null,   // sends "Designer" or "User" in English
       gender: data.gender,
       password: data.password,
     }),
@@ -113,7 +122,7 @@ const apiUpdateUser = ({ id, data }: { id: string; data: UserEditData }) =>
       name: data.name,
       phoneNumber: data.phoneNumber || null,
       email: data.email,
-      nid: data.nid || null,
+      nid: data.nid || null,   // sends "Designer" or "User" in English
       age: data.age !== "" ? Number(data.age) : null,
       gender: data.gender,
     }),
@@ -123,13 +132,26 @@ const apiDeleteUser = (id: string) =>
   authFetch(`${API_BASE}/Api/V1/users/${id}`, { method: "DELETE" });
 
 const normalize = (raw: unknown): SystemUser[] =>
-  Array.isArray(raw)
-    ? raw
-    : ((raw as any)?.data ?? (raw as any)?.items ?? (raw as any)?.users ?? []);
+  (Array.isArray(raw) ? raw : ((raw as any)?.data ?? [])).map((u: any) => ({
+    id: u.id,
+    name: u.name,
+    email: u.email,
+    phoneNumber: u.phone,
+    age: u.age,
+    nid: u.nid,
+    gender: u.gender,
+    roles: u.roles ?? [],
+  }));
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const GENDER_MAP: Record<string, string> = { Male: "ذكر", Female: "أنثى" };
+
+/** Map English role values (stored in nid) to Arabic display labels */
+const ROLE_MAP: Record<string, string> = {
+  Designer: "مصمم",
+  User: "مستخدم",
+};
 
 const GenderBadge = ({ gender }: { gender?: string }) => (
   <span
@@ -146,7 +168,7 @@ const GenderBadge = ({ gender }: { gender?: string }) => (
 const RoleBadge = ({ role }: { role: string }) => (
   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#1B5E4F]/10 text-[#1B5E4F] border border-[#1B5E4F]/20">
     <Shield size={9} />
-    {role}
+    {ROLE_MAP[role] ?? role}
   </span>
 );
 
@@ -252,16 +274,28 @@ const AddUserModal = ({
                   dir="ltr"
                 />
               </div>
-              <div>
-                <label className={labelCls}>الرقم الوطني (NID)</label>
-                <input
-                  className={inputCls}
-                  placeholder="1xxxxxxxxx"
+
+              {/* Role dropdown — value is English ("Designer" | "User"), sent as `nid` to backend */}
+              <div className="relative">
+                <label className={labelCls}>الوظيفة</label>
+                <select
+                  className={inputCls + " appearance-none"}
                   value={form.nid}
                   onChange={(e) => set("nid", e.target.value)}
-                  dir="ltr"
+                >
+                  <option value="">اختر الوظيفة</option>
+                  {ROLE_OPTIONS.map((r) => (
+                    <option key={r.value} value={r.value}>
+                      {r.label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown
+                  size={14}
+                  className="absolute left-3 top-[60%] -translate-y-1/2 text-[#B8976B] pointer-events-none"
                 />
               </div>
+
               <div>
                 <label className={labelCls}>الجنس</label>
                 <div className="relative">
@@ -432,15 +466,28 @@ const EditUserModal = ({
                 dir="ltr"
               />
             </div>
-            <div>
-              <label className={labelCls}>الرقم الوطني</label>
-              <input
-                className={inputCls}
+
+            {/* Role dropdown — value is English ("Designer" | "User"), sent as `nid` to backend */}
+            <div className="relative">
+              <label className={labelCls}>الوظيفة</label>
+              <select
+                className={inputCls + " appearance-none"}
                 value={form.nid}
                 onChange={(e) => set("nid", e.target.value)}
-                dir="ltr"
+              >
+                <option value="">اختر الوظيفة</option>
+                {ROLE_OPTIONS.map((r) => (
+                  <option key={r.value} value={r.value}>
+                    {r.label}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown
+                size={14}
+                className="absolute left-3 top-[60%] -translate-y-1/2 text-[#B8976B] pointer-events-none"
               />
             </div>
+
             <div>
               <label className={labelCls}>الجنس</label>
               <div className="relative">
@@ -648,11 +695,12 @@ const UserCard = ({
             </span>
           </div>
         )}
+        {/* nid carries the role — display it using ROLE_MAP */}
         {user.nid && (
           <div className="flex items-center gap-2 text-[#4A4A4A]">
             <Hash size={14} className="text-[#B8976B] shrink-0" />
-            <span className="text-xs font-mono text-gray-400" dir="ltr">
-              {user.nid}
+            <span className="text-xs font-semibold text-[#1B5E4F]">
+              {ROLE_MAP[user.nid] ?? user.nid}
             </span>
           </div>
         )}
@@ -821,7 +869,7 @@ const UsersPage = () => {
     email: u.email,
     phoneNumber: u.phoneNumber ?? "",
     age: u.age ?? "",
-    nid: u.nid ?? "",
+    nid: u.nid ?? "",        // pre-fill with existing role value ("Designer" | "User")
     gender: u.gender ?? "Male",
   });
 
@@ -1017,7 +1065,8 @@ const UsersPage = () => {
               <div className="grid grid-cols-2 gap-4 text-sm">
                 {[
                   ["رقم الهاتف", selected.phoneNumber ?? "—"],
-                  ["الرقم الوطني", selected.nid ?? "—"],
+                  // nid stores the role — display in Arabic using ROLE_MAP
+                  ["الوظيفة", ROLE_MAP[selected.nid ?? ""] ?? selected.nid ?? "—"],
                   ["العمر", selected.age ? `${selected.age} سنة` : "—"],
                   ["الجنس", GENDER_MAP[selected.gender ?? ""] ?? "—"],
                 ].map(([label, value]) => (
