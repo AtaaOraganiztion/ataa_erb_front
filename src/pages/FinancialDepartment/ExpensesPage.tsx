@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "../../context/AuthContext"; // adjust path if needed
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { v4 as uuidv4 } from "uuid";
 import {
   Search,
   Filter,
@@ -141,7 +142,9 @@ const authFetch = async (url: string, options: RequestInit = {}) => {
       } else if (parsed?.title) {
         pretty = parsed.title;
       }
-    } catch {}
+    } catch {
+      console.error("Failed to parse error response as JSON", t);
+    }
     throw new Error(pretty || `HTTP ${res.status}`);
   }
   const text = await res.text();
@@ -869,7 +872,7 @@ const ExpensesPage = () => {
       const prev = qc.getQueriesData({ queryKey: QUERY_KEY });
       // Optimistic temp item — replaced by the real one in onSuccess
       const temp: Expense = {
-        id: `temp-${Date.now()}`,
+        id: `temp-${uuidv4()}`,
         ...(toPayload(data) as any),
         sectorName: sectors.find((s) => s.id === data.sectorId)?.name,
       };

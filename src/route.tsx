@@ -19,14 +19,22 @@ const generateRoutes = () => {
       if (item.url) {
         routes.push({
           path: item.url,
-          element: item.component ? item.component : <DynamicPage title={item.label} />,
+          element: item.component ? (
+            item.component
+          ) : (
+            <DynamicPage title={item.label} />
+          ),
         });
       }
       if (item.subItems) {
         item.subItems.forEach((sub: any) => {
           routes.push({
             path: sub.url,
-            element: sub.component ? sub.component : <DynamicPage title={sub.label} />,
+            element: sub.component ? (
+              sub.component
+            ) : (
+              <DynamicPage title={sub.label} />
+            ),
           });
         });
       }
@@ -47,18 +55,10 @@ export const router = createBrowserRouter([
       {
         path: "/",
         element: <Layout />,
-    element: <AuthWrapper />,       
-    errorElement: <Error />,
-    children: [
-      { path: "/", element: <Home /> },          
-      {
-        path: "/",
-        element: <Layout />,                
         children: generateRoutes(),
       },
       { path: "/login", element: <LoginPage /> },
       { path: "*", element: <NotFound /> },
     ],
   },
-]);
 ]);
