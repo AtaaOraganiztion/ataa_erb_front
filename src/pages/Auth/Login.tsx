@@ -45,6 +45,13 @@ const LoginPage = () => {
         console.error("User not found in localStorage");
         return;
       }
+      const user = JSON.parse(userData);
+      const roles = user.roles || [];
+
+      if (roles.includes("Admin")) navigate("/dashboard");
+      else if (roles.includes("HR")) navigate("/employees");
+      else if (roles.includes("Financial")) navigate("/budgets");
+      else navigate("/attendance");
 
       const user = JSON.parse(userData);
       const roles = user.roles || [];
@@ -61,110 +68,104 @@ const LoginPage = () => {
 
       console.log("Login successful:", result);
     } else {
-      // show error to user
       console.error("Login failed:", result.error);
     }
   };
 
   return (
     <div
-      className="min-h-screen bg-linear-to-br from-[#F5F1E8] via-white to-[#EBE7DC] flex items-center justify-center p-4"
+      className="min-h-screen bg-brand-bg flex items-center justify-center p-4"
       dir="rtl"
     >
       {/* زخارف الخلفية */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-[#1B5E4F]/5 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-[#B8976B]/5 rounded-full blur-3xl"></div>
+        <div className="absolute top-0 right-0 w-96 h-96 bg-brand-primary/5 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-brand-accent/5 rounded-full blur-3xl"></div>
       </div>
 
       {/* صندوق تسجيل الدخول */}
       <div className="w-full max-w-md relative z-10">
-        <div className="bg-white rounded-3xl shadow-2xl border-2 border-[#B8976B]/20 overflow-hidden">
-          {/* Header مع اللوجو */}
-          <div className="bg-linear-to-br from-[#1B5E4F] to-[#0F4F3E] p-8 text-center relative overflow-hidden">
-            {/* زخارف */}
+        <div className="bg-white rounded-3xl shadow-2xl border-2 border-brand-primary/20 overflow-hidden">
+
+          {/* Header */}
+          <div className="gradient-bg p-8 text-center relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 border-t-4 border-r-4 border-white/10 rounded-tr-3xl"></div>
             <div className="absolute bottom-0 left-0 w-32 h-32 border-b-4 border-l-4 border-white/10 rounded-bl-3xl"></div>
 
             <div className="relative z-10">
-              {/* اللوجو */}
-              <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center shadow-lg">
+              <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center shadow-lg">
                 <img
                   src={logo}
                   alt="Logo"
                   className="w-20 h-20 rounded-full object-cover"
                 />
               </div>
-
               <h1 className="text-3xl font-bold text-white mb-2">
-                استدامة العطاء الدولية
+                مؤسسة مانح المميزة
               </h1>
               <p className="text-white/80 text-sm">
                 تسجيل الدخول إلى لوحة التحكم
               </p>
             </div>
 
-            {/* خط ذهبي */}
-            <div className="absolute bottom-0 left-0 right-0 h-1 bg-linear-to-r from-transparent via-[#B8976B] to-transparent"></div>
+            {/* خط زخرفي */}
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-linear-to-r from-transparent via-white/40 to-transparent"></div>
           </div>
 
           {/* Form */}
           <div className="p-8">
             <form onSubmit={handleSubmit(handleLogin)} className="space-y-6">
-              {/* حقل البريد الإلكتروني */}
+
+              {/* البريد الإلكتروني */}
               <div>
-                <label className="block text-[#1B5E4F] font-semibold mb-2 text-sm">
+                <label className="block text-brand-primary font-semibold mb-2 text-sm">
                   البريد الإلكتروني
                 </label>
                 <div className="relative">
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[#B8976B]">
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-accent">
                     <Mail size={20} />
                   </div>
                   <input
                     {...register("email")}
                     placeholder="example@domain.com"
-                    className="w-full pr-12 pl-4 py-3 border-2 border-[#B8976B]/30 rounded-xl
-                      focus:border-[#1B5E4F] focus:ring-2 focus:ring-[#1B5E4F]/20
+                    className="w-full pr-12 pl-4 py-3 border-2 border-brand-accent/30 rounded-xl
+                      focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20
                       outline-none transition-all duration-300
-                      placeholder:text-gray-400"
+                      placeholder:text-brand-subtext"
                     disabled={isSubmitting}
                   />
                   {errors.email && (
-                    <p className="text-red-700 text-sm mt-1">
-                      {errors.email?.message}
-                    </p>
+                    <p className="text-red-600 text-sm mt-1">{errors.email.message}</p>
                   )}
                 </div>
               </div>
 
-              {/* حقل كلمة المرور */}
+              {/* كلمة المرور */}
               <div>
-                <label className="block text-[#1B5E4F] font-semibold mb-2 text-sm">
+                <label className="block text-brand-primary font-semibold mb-2 text-sm">
                   كلمة المرور
                 </label>
                 <div className="relative">
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[#B8976B]">
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-accent">
                     <Lock size={20} />
                   </div>
                   <input
                     type={showPassword ? "text" : "password"}
                     {...register("password")}
                     placeholder="......"
-                    className="w-full pr-12 pl-12 py-3 border-2 border-[#B8976B]/30 rounded-xl
-                      focus:border-[#1B5E4F] focus:ring-2 focus:ring-[#1B5E4F]/20
+                    className="w-full pr-12 pl-12 py-3 border-2 border-brand-accent/30 rounded-xl
+                      focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20
                       outline-none transition-all duration-300
-                      placeholder:text-gray-400"
+                      placeholder:text-brand-subtext"
                     disabled={isSubmitting}
                   />
                   {errors.password && (
-                    <p className="text-red-700 text-sm mt-1">
-                      {errors.password?.message}
-                    </p>
+                    <p className="text-red-600 text-sm mt-1">{errors.password.message}</p>
                   )}
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-[#B8976B] hover:text-[#1B5E4F] transition-colors"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-accent hover:text-brand-primary transition-colors"
                     disabled={isSubmitting}
                   >
                     {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
@@ -176,7 +177,7 @@ const LoginPage = () => {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-linear-to-r from-[#1B5E4F] to-[#0F4F3E] text-white
+                className="w-full gradient-bg text-white
                   py-4 rounded-xl font-bold text-lg
                   hover:shadow-xl hover:scale-[1.02]
                   active:scale-[0.98]
@@ -184,9 +185,6 @@ const LoginPage = () => {
                   disabled:opacity-50 disabled:cursor-not-allowed
                   relative overflow-hidden group"
               >
-                {/* تأثير الخلفية عند hover */}
-                <div className="absolute inset-0 bg-linear-to-r from-[#0F4F3E] to-[#1B5E4F] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-
                 <div className="relative z-10 flex items-center justify-center gap-2">
                   {isSubmitting ? (
                     <>
@@ -201,15 +199,20 @@ const LoginPage = () => {
                   )}
                 </div>
               </button>
+
             </form>
           </div>
 
           {/* Footer */}
+          <div className="bg-brand-soft px-8 py-4 border-t-2 border-brand-primary/10">
+            <p className="text-center text-xs text-brand-subtext">
+              © {year} مؤسسة مانح المميزة. جميع الحقوق محفوظة.
           <div className="bg-linear-to-br from-[#F5F1E8] to-white px-8 py-4 border-t-2 border-[#B8976B]/10">
             <p className="text-center text-xs text-[#4A4A4A]">
               © {year} استدامة العطاء الدولية. جميع الحقوق محفوظة.
             </p>
           </div>
+
         </div>
       </div>
     </div>

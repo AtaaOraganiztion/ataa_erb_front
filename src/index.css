@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
 .gradient-bg {
-  background: linear-gradient(135deg, #064e3b 0%, #047857 100%);
+  background: linear-gradient(135deg, #2BADA0 0%, #1d8a7e 100%);
+}
+
+@theme {
+  --color-brand-primary: #2BADA0;
+  --color-brand-primaryDark: #1d8a7e;
+  --color-brand-accent: #808080;
+  --color-brand-bg: #f9fafa;
+  --color-brand-soft: #eef7f6;
+  --color-brand-text: #2f2f2f;
+  --color-brand-subtext: #6b7280;
 }
