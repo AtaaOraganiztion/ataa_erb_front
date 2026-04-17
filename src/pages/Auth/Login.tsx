@@ -24,6 +24,7 @@ const LoginSchema = yup.object({
 
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const year = new Date().getFullYear();
   const navigate = useNavigate();
   const {
     register,
@@ -38,8 +39,26 @@ const LoginPage = () => {
     const result = await login(data.email, data.password);
 
     if (result.success) {
-      // show error to user
-      navigate("/dashboard");
+      const userData = localStorage.getItem("user");
+
+      if (!userData) {
+        console.error("User not found in localStorage");
+        return;
+      }
+
+      const user = JSON.parse(userData);
+      const roles = user.roles || [];
+
+      if (roles.includes("Admin")) {
+        navigate("/dashboard");
+      } else if (roles.includes("HR")) {
+        navigate("/employees");
+      } else if (roles.includes("Financial")) {
+        navigate("/budgets");
+      } else {
+        navigate("/attendance");
+      }
+
       console.log("Login successful:", result);
     } else {
       // show error to user
@@ -188,7 +207,7 @@ const LoginPage = () => {
           {/* Footer */}
           <div className="bg-linear-to-br from-[#F5F1E8] to-white px-8 py-4 border-t-2 border-[#B8976B]/10">
             <p className="text-center text-xs text-[#4A4A4A]">
-              © 2024 استدامة العطاء الدولية. جميع الحقوق محفوظة.
+              © {year} استدامة العطاء الدولية. جميع الحقوق محفوظة.
             </p>
           </div>
         </div>

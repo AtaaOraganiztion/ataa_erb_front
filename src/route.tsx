@@ -1,9 +1,9 @@
 import { createBrowserRouter } from "react-router-dom";
-
 import Home from "./pages/home/Home";
 import NotFound from "./pages/NotFound";
 import Error from "./pages/Error";
 import Layout from "./components/layout/Layout";
+import AuthWrapper from "./components/layout/AuthWrapper";
 import { NAV_CONFIG } from "./lib/utiltis";
 import LoginPage from "./pages/Auth/Login";
 
@@ -17,23 +17,14 @@ const generateRoutes = () => {
       if (item.url) {
         routes.push({
           path: item.url,
-          element: item.component ? (
-            item.component
-          ) : (
-            <DynamicPage title={item.label} />
-          ),
+          element: item.component ? item.component : <DynamicPage title={item.label} />,
         });
       }
-
       if (item.subItems) {
         item.subItems.forEach((sub: any) => {
           routes.push({
             path: sub.url,
-            element: sub.component ? (
-              sub.component
-            ) : (
-              <DynamicPage title={sub.label} />
-            ),
+            element: sub.component ? sub.component : <DynamicPage title={sub.label} />,
           });
         });
       }
@@ -45,18 +36,17 @@ const generateRoutes = () => {
 
 export const router = createBrowserRouter([
   {
-    path: "/",
-    element: <Home />,
-  },
-  {
-    path: "/",
-    element: <Layout />,
+    element: <AuthWrapper />,       
     errorElement: <Error />,
-    children: generateRoutes(), 
+    children: [
+      { path: "/", element: <Home /> },          
+      {
+        path: "/",
+        element: <Layout />,                
+        children: generateRoutes(),
+      },
+      { path: "/login", element: <LoginPage /> },
+      { path: "*", element: <NotFound /> },
+    ],
   },
-  {
-    path: "/login",
-    element: <LoginPage />,
-  },
-  { path: "*", element: <NotFound /> },
 ]);
