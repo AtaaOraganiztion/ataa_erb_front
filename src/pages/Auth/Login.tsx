@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { useAuth } from "../../context/AuthContext";
+
 type LoginPageProps = {
   email: string;
   password: string;
@@ -40,10 +41,7 @@ const LoginPage = () => {
 
     if (result.success) {
       const userData = localStorage.getItem("user");
-      if (!userData) {
-        console.error("User not found in localStorage");
-        return;
-      }
+      if (!userData) return;
       const user = JSON.parse(userData);
       const roles = user.roles || [];
 
@@ -63,18 +61,16 @@ const LoginPage = () => {
     >
       {/* زخارف الخلفية */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-brand-primary/5 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-brand-accent/5 rounded-full blur-3xl"></div>
+        <div className="absolute top-0 right-0 w-96 h-96 bg-brand-primary/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-brand-accent/5 rounded-full blur-3xl" />
       </div>
 
-      {/* صندوق تسجيل الدخول */}
       <div className="w-full max-w-md relative z-10">
         <div className="bg-white rounded-3xl shadow-2xl border-2 border-brand-primary/20 overflow-hidden">
-
           {/* Header */}
           <div className="gradient-bg p-8 text-center relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 border-t-4 border-r-4 border-white/10 rounded-tr-3xl"></div>
-            <div className="absolute bottom-0 left-0 w-32 h-32 border-b-4 border-l-4 border-white/10 rounded-bl-3xl"></div>
+            <div className="absolute top-0 right-0 w-32 h-32 border-t-4 border-r-4 border-white/10 rounded-tr-3xl" />
+            <div className="absolute bottom-0 left-0 w-32 h-32 border-b-4 border-l-4 border-white/10 rounded-bl-3xl" />
 
             <div className="relative z-10">
               <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center shadow-lg">
@@ -92,14 +88,12 @@ const LoginPage = () => {
               </p>
             </div>
 
-            {/* خط زخرفي */}
-            <div className="absolute bottom-0 left-0 right-0 h-1 bg-linear-to-r from-transparent via-white/40 to-transparent"></div>
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-linear-to-r from-transparent via-white/40 to-transparent" />
           </div>
 
           {/* Form */}
           <div className="p-8">
             <form onSubmit={handleSubmit(handleLogin)} className="space-y-6">
-
               {/* البريد الإلكتروني */}
               <div>
                 <label className="block text-brand-primary font-semibold mb-2 text-sm">
@@ -119,7 +113,9 @@ const LoginPage = () => {
                     disabled={isSubmitting}
                   />
                   {errors.email && (
-                    <p className="text-red-600 text-sm mt-1">{errors.email.message}</p>
+                    <p className="text-red-600 text-sm mt-1">
+                      {errors.email.message}
+                    </p>
                   )}
                 </div>
               </div>
@@ -144,7 +140,9 @@ const LoginPage = () => {
                     disabled={isSubmitting}
                   />
                   {errors.password && (
-                    <p className="text-red-600 text-sm mt-1">{errors.password.message}</p>
+                    <p className="text-red-600 text-sm mt-1">
+                      {errors.password.message}
+                    </p>
                   )}
                   <button
                     type="button"
@@ -161,18 +159,15 @@ const LoginPage = () => {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full gradient-bg text-white
-                  py-4 rounded-xl font-bold text-lg
-                  hover:shadow-xl hover:scale-[1.02]
-                  active:scale-[0.98]
+                className="w-full gradient-bg text-white py-4 rounded-xl font-bold text-lg
+                  hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]
                   transition-all duration-300
-                  disabled:opacity-50 disabled:cursor-not-allowed
-                  relative overflow-hidden group"
+                  disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <div className="relative z-10 flex items-center justify-center gap-2">
+                <div className="flex items-center justify-center gap-2">
                   {isSubmitting ? (
                     <>
-                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                       <span>جاري تسجيل الدخول...</span>
                     </>
                   ) : (
@@ -183,7 +178,6 @@ const LoginPage = () => {
                   )}
                 </div>
               </button>
-
             </form>
           </div>
 
@@ -193,7 +187,6 @@ const LoginPage = () => {
               © {year} مؤسسة مانح المميزة. جميع الحقوق محفوظة.
             </p>
           </div>
-
         </div>
       </div>
     </div>
