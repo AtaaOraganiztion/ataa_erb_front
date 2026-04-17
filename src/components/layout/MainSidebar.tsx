@@ -25,8 +25,6 @@ const MainSidebar = ({ isOpen, onClose }: ModernSidebarProps) => {
   const { user, logout } = useAuth();
   const userRoles = (user?.roles || []) as UserRole[];
 
-  // Get user roles from auth context (adjust according to your user object)
-
   const toggleExpanded = (itemId: string) => {
     setExpandedItems((prev) => ({
       ...prev,
@@ -39,7 +37,6 @@ const MainSidebar = ({ isOpen, onClose }: ModernSidebarProps) => {
     navigate("/");
   };
 
-  // Filter navigation based on user roles
   const filteredNav = NAV_CONFIG.filter((category) =>
     hasAccess(userRoles, category.roles),
   )
@@ -56,9 +53,6 @@ const MainSidebar = ({ isOpen, onClose }: ModernSidebarProps) => {
         .filter((item) => !item.subItems || item.subItems.length > 0),
     }))
     .filter((category) => category.items.length > 0);
-        .filter((item) => !item.subItems || item.subItems.length > 0), // Remove items with no visible sub-items
-    }))
-    .filter((category) => category.items.length > 0); // Remove empty categories
 
   const NavItem = ({
     item,
@@ -83,7 +77,6 @@ const MainSidebar = ({ isOpen, onClose }: ModernSidebarProps) => {
       if (item.url) {
         setActivePage(item.page || item.id);
 
-        // Collapse parent when clicking a sub-item
         if (isSubItem && parentId) {
           setExpandedItems((prev) => ({
             ...prev,
@@ -112,17 +105,6 @@ const MainSidebar = ({ isOpen, onClose }: ModernSidebarProps) => {
         >
           {isActive && (
             <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[3px] h-8 bg-brand-accent rounded-l-full" />
-            transition-all duration-300 group relative overflow-hidden
-            ${
-              isActive
-                ? "bg-gradient-to-r from-[#1B5E4F] to-[#0F4F3E] text-white shadow-lg"
-                : "text-[#4A4A4A] hover:bg-gradient-to-r hover:from-[#EBE7DC] hover:to-[#F5F1E8]"
-            }
-            ${isSubItem ? "pr-8 text-sm" : ""}
-          `}
-        >
-          {isActive && (
-            <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-[#B8976B] rounded-l-full" />
           )}
 
           <div className="flex items-center gap-3 flex-1">
@@ -130,7 +112,6 @@ const MainSidebar = ({ isOpen, onClose }: ModernSidebarProps) => {
               <div
                 className={`p-1.5 rounded-lg transition
                 ${
-                className={`p-1.5 rounded-lg ${
                   isActive
                     ? "bg-white/20"
                     : "bg-brand-primary/5 group-hover:bg-brand-primary/10"
@@ -144,11 +125,6 @@ const MainSidebar = ({ isOpen, onClose }: ModernSidebarProps) => {
             )}
 
             <span className="flex-1 text-right font-medium tracking-wide">
-            <span
-              className={`flex-1 text-right font-semibold ${
-                isActive ? "text-white" : ""
-              }`}
-            >
               {item.label}
             </span>
           </div>
@@ -207,22 +183,6 @@ const MainSidebar = ({ isOpen, onClose }: ModernSidebarProps) => {
                   <img
                     src={logo}
                     className="w-10 h-10 object-contain"
-        className={`bg-white border-l-2 border-[#B8976B]/30 shadow-2xl
-        transition-all duration-300 ease-in-out w-80
-        overflow-y-auto overflow-x-hidden
-        h-screen fixed right-0 top-0 z-40
-        md:translate-x-0
-        ${isOpen ? "translate-x-0" : "translate-x-full md:translate-x-0"}`}
-      >
-        <div className="flex flex-col min-h-full relative z-10">
-          {/* Header */}
-          <div className="p-6 border-b-2 border-[#B8976B]/20">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full shadow-lg">
-                  <img
-                    src={logo}
-                    className="w-full h-full object-cover rounded-full"
                     alt="Logo"
                   />
                 </div>
@@ -234,17 +194,12 @@ const MainSidebar = ({ isOpen, onClose }: ModernSidebarProps) => {
                   <p className="text-xs text-brand-subtext">
                     لوحة التحكم الشاملة
                   </p>
-                  <h1 className="text-xl font-bold text-[#1B5E4F]">
-                    استدامة العطاء الدولية
-                  </h1>
-                  <p className="text-xs text-[#4A4A4A]">لوحة التحكم الشاملة</p>
                 </div>
               </div>
 
               <button
                 onClick={onClose}
                 className="md:hidden p-1.5 rounded-lg hover:bg-brand-soft"
-                className="md:hidden p-1.5 rounded-lg hover:bg-[#EBE7DC]"
               >
                 ✕
               </button>
@@ -255,7 +210,6 @@ const MainSidebar = ({ isOpen, onClose }: ModernSidebarProps) => {
           <div className="flex-1 p-4 pb-6">
             {filteredNav.length === 0 ? (
               <div className="text-center py-10 text-brand-subtext">
-              <div className="text-center py-10 text-[#4A4A4A]">
                 لا توجد صلاحيات لعرض القائمة
               </div>
             ) : (
@@ -264,8 +218,6 @@ const MainSidebar = ({ isOpen, onClose }: ModernSidebarProps) => {
                   <div className="flex items-center gap-2 mb-3 px-3">
                     <div className="w-6 h-[2px] bg-brand-accent/60 rounded-full" />
                     <h3 className="text-[11px] font-semibold text-brand-accent tracking-widest">
-                    <div className="w-8 h-px bg-gradient-to-r from-[#B8976B] to-transparent" />
-                    <h3 className="text-xs font-bold text-[#1B5E4F] uppercase">
                       {category.title}
                     </h3>
                   </div>
@@ -306,33 +258,6 @@ const MainSidebar = ({ isOpen, onClose }: ModernSidebarProps) => {
                     </p>
                     {user.roles && (
                       <p className="text-[10px] text-brand-accent mt-0.5">
-
-          {/* Profile & Logout */}
-          <div className="border-t-2 border-[#B8976B]/20 p-4">
-            {user && (
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 p-3 bg-white rounded-xl shadow-sm">
-                  <div className="w-12 h-12 rounded-full bg-[#1B5E4F] flex items-center justify-center text-white overflow-hidden">
-                    {user.avatar ? (
-                      <img
-                        src={user.avatar}
-                        className="w-full h-full object-cover"
-                        alt="avatar"
-                      />
-                    ) : (
-                      <User size={20} />
-                    )}
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-[#1B5E4F] truncate">
-                      {user.fullName ?? user.email}
-                    </p>
-                    <p className="text-xs text-[#4A4A4A] truncate">
-                      {user.email}
-                    </p>
-                    {user.roles && user.roles.length > 0 && (
-                      <p className="text-[10px] text-[#B8976B] mt-0.5">
                         {user.roles.join(" • ")}
                       </p>
                     )}
@@ -343,7 +268,6 @@ const MainSidebar = ({ isOpen, onClose }: ModernSidebarProps) => {
                   onClick={handleLogout}
                   className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl
                   bg-brand-primary text-white hover:bg-brand-primaryDark transition"
-                  bg-red-500 text-white hover:bg-red-600 transition"
                 >
                   <LogOut size={18} />
                   تسجيل الخروج
