@@ -41,7 +41,11 @@ const LoginPage = () => {
 
     if (result.success) {
       const userData = localStorage.getItem("user");
-      if (!userData) return;
+
+      if (!userData) {
+        console.error("User not found in localStorage");
+        return;
+      }
       const user = JSON.parse(userData);
       const roles = user.roles || [];
 
@@ -49,6 +53,21 @@ const LoginPage = () => {
       else if (roles.includes("HR")) navigate("/employees");
       else if (roles.includes("Financial")) navigate("/budgets");
       else navigate("/attendance");
+
+      const user = JSON.parse(userData);
+      const roles = user.roles || [];
+
+      if (roles.includes("Admin")) {
+        navigate("/dashboard");
+      } else if (roles.includes("HR")) {
+        navigate("/employees");
+      } else if (roles.includes("Financial")) {
+        navigate("/budgets");
+      } else {
+        navigate("/attendance");
+      }
+
+      console.log("Login successful:", result);
     } else {
       console.error("Login failed:", result.error);
     }
@@ -185,6 +204,9 @@ const LoginPage = () => {
           <div className="bg-brand-soft px-8 py-4 border-t-2 border-brand-primary/10">
             <p className="text-center text-xs text-brand-subtext">
               © {year} مؤسسة مانح المميزة. جميع الحقوق محفوظة.
+          <div className="bg-linear-to-br from-[#F5F1E8] to-white px-8 py-4 border-t-2 border-[#B8976B]/10">
+            <p className="text-center text-xs text-[#4A4A4A]">
+              © {year} استدامة العطاء الدولية. جميع الحقوق محفوظة.
             </p>
           </div>
         </div>
