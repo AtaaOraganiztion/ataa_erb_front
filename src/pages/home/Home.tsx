@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   BarChart2,
   Users,
@@ -20,7 +20,7 @@ import {
   X,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-import logo from "../../assets/Logo2.jpg";
+import logo from "../../assets/Logo21.jpg";
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
@@ -102,8 +102,6 @@ const STATS = [
   { value: "٣٠+", label: "وحدة متكاملة" },
   { value: "٢٤/٧", label: "دعم فني متواصل" },
 ];
-
-
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -677,15 +675,18 @@ const HomePage = () => {
             © ٢٠٢٦ استدامة العطاء الدولية — جميع الحقوق محفوظة
           </p>
           <div className="flex gap-4 text-xs">
-            <button className="hover:text-[#B8976B] transition-colors">
+            <Link to={"/privacy-policy"} className="hover:text-[#B8976B] transition-colors">
               سياسة الخصوصية
-            </button>
-            <button className="hover:text-[#B8976B] transition-colors">
+            </Link>
+            <Link to={"/terms-of-use"} className="hover:text-[#B8976B] transition-colors">
               الشروط والأحكام
-            </button>
-            <button className="hover:text-[#B8976B] transition-colors">
+            </Link>
+            <Link
+              to="https://www.alataa.sa/"
+              className="hover:text-[#B8976B] transition-colors"
+            >
               تواصل معنا
-            </button>
+            </Link>
           </div>
         </div>
       </footer>

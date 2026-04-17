@@ -6,6 +6,8 @@ import Layout from "./components/layout/Layout";
 import AuthWrapper from "./components/layout/AuthWrapper";
 import { NAV_CONFIG } from "./lib/utiltis";
 import LoginPage from "./pages/Auth/Login";
+import TermsOfUse from "./pages/TermsOfUse/TermsOfUse";
+import PrivacyPolicy from "./pages/PrivacyPolicy/PrivacyPolicy";
 
 const DynamicPage = ({ title }: { title: string }) => <div>Page: {title}</div>;
 
@@ -17,14 +19,22 @@ const generateRoutes = () => {
       if (item.url) {
         routes.push({
           path: item.url,
-          element: item.component ? item.component : <DynamicPage title={item.label} />,
+          element: item.component ? (
+            item.component
+          ) : (
+            <DynamicPage title={item.label} />
+          ),
         });
       }
       if (item.subItems) {
         item.subItems.forEach((sub: any) => {
           routes.push({
             path: sub.url,
-            element: sub.component ? sub.component : <DynamicPage title={sub.label} />,
+            element: sub.component ? (
+              sub.component
+            ) : (
+              <DynamicPage title={sub.label} />
+            ),
           });
         });
       }
@@ -36,13 +46,15 @@ const generateRoutes = () => {
 
 export const router = createBrowserRouter([
   {
-    element: <AuthWrapper />,       
+    element: <AuthWrapper />,
     errorElement: <Error />,
     children: [
-      { path: "/", element: <Home /> },          
+      { path: "/", element: <Home /> },
+      { path: "/terms-of-use", element: <TermsOfUse /> },
+      { path: "/privacy-policy", element: <PrivacyPolicy /> },
       {
         path: "/",
-        element: <Layout />,                
+        element: <Layout />,
         children: generateRoutes(),
       },
       { path: "/login", element: <LoginPage /> },
