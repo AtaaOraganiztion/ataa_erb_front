@@ -93,25 +93,24 @@ const makeEmptyForm = (userId: string): ExpenseFormData => ({
   sectorNumber: "",
   amount: "",
   expenseType: "Employee",
-  expenseDate: "",
+  expenseDate: new Date().toISOString(), // ← default to now
   description: "",
   category: "",
   status: "Draft",
   requestedBy: "",
   approvedBy: userId,
-  approvedDate: "",
+  approvedDate: new Date().toISOString(), // ← default to now
   rejectionReason: "N/A",
   receiptNumber: "AUTO",
   isConfirmed: false,
   confirmedBy: userId,
-  confirmedDate: "",
+  confirmedDate: new Date().toISOString(), // ← default to now
   isPaid: false,
-  paidDate: "",
+  paidDate: new Date().toISOString(), // ← default to now
   hoursWorked: "",
   confirm: false,
   notes: "",
 });
-
 const API_BASE = import.meta.env.VITE_API_URL;
 const QUERY_KEY = ["expenses"] as const;
 
@@ -157,34 +156,36 @@ const toDate = (v: string) => (v.trim() === "" ? null : v.trim());
 // approvedBy / confirmedBy are seeded from the auth context in makeEmptyForm()
 // so they always arrive as valid ULIDs — toPayload just passes them through.
 const toPayload = (d: ExpenseFormData) => {
+  const now = new Date().toISOString();
+
   const payload: Record<string, unknown> = {
     sectorId: toStr(d.sectorId) ?? "",
+    expenseAmount: toNum(d.expenseAmount), // ← was missing
     amount: toNum(d.amount),
     expenseType: d.expenseType,
-    expenseDate: toDate(d.expenseDate),
-    description: toStr(d.description),
-    category: toStr(d.category),
+    expenseDate: toDate(d.expenseDate) ?? now, // ← never null
+    description: toStr(d.description) ?? "",
+    category: toStr(d.category) ?? "",
     status: d.status,
     rejectionReason: toStr(d.rejectionReason) ?? "N/A",
     receiptNumber: toStr(d.receiptNumber) ?? "AUTO",
-    approvedBy: d.approvedBy, // ULID — seeded from currentUserId
-    confirmedBy: d.confirmedBy, // ULID — seeded from currentUserId
+    approvedBy: d.approvedBy,
+    approvedDate: toDate(d.approvedDate) ?? now, // ← never null
+    confirmedBy: d.confirmedBy,
+    confirmedDate: toDate(d.confirmedDate) ?? now, // ← never null
     isConfirmed: d.isConfirmed,
     isPaid: d.isPaid,
+    paidDate: toDate(d.paidDate) ?? now, // ← never null
     confirm: d.confirm,
-    notes: toStr(d.notes),
+    notes: toStr(d.notes) ?? "",
   };
 
   if (d.projectId.trim()) payload.projectId = d.projectId.trim();
   if (d.requestedBy.trim()) payload.requestedBy = d.requestedBy.trim();
-  if (d.approvedDate.trim()) payload.approvedDate = d.approvedDate.trim();
-  if (d.confirmedDate.trim()) payload.confirmedDate = d.confirmedDate.trim();
-  if (d.paidDate.trim()) payload.paidDate = d.paidDate.trim();
   if (d.hoursWorked !== "") payload.hoursWorked = toNum(d.hoursWorked);
 
   return payload;
 };
-
 const fetchExpenses = (params: Record<string, string>) => {
   const qs = new URLSearchParams(
     Object.entries(params).filter(([, v]) => v !== ""),
@@ -225,9 +226,18 @@ const normalize = (raw: unknown): Expense[] => {
     id: e.id ?? e.expenseId ?? e.Id ?? `fallback-${i}`,
   }));
 };
+
 const normSectors = (raw: unknown): Sector[] =>
   Array.isArray(raw) ? raw : ((raw as any)?.data ?? (raw as any)?.items ?? []);
 
+// NEW: enrich expenses with resolved sector names
+const enrichExpenses = (expenses: Expense[], sectors: Sector[]): Expense[] => {
+  const sectorMap = new Map(sectors.map((s) => [s.id, s.name]));
+  return expenses.map((e) => ({
+    ...e,
+    sectorName: sectorMap.get(e.sectorId) ?? e.sectorName ?? e.sectorId,
+  }));
+};
 // ─── Config maps ──────────────────────────────────────────────────────────────
 
 const STATUS_MAP: Record<string, { label: string; cls: string; dot: string }> =
@@ -830,8 +840,8 @@ const ExpensesPage = () => {
     staleTime: 60_000,
   });
 
-  const expenses: Expense[] = normalize(rawExpenses);
   const sectors: Sector[] = normSectors(rawSectors);
+  const expenses: Expense[] = enrichExpenses(normalize(rawExpenses), sectors);
 
   const displayed = search
     ? expenses.filter(
