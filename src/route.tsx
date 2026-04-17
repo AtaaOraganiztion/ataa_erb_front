@@ -7,7 +7,7 @@ import AuthWrapper from "./components/layout/AuthWrapper";
 import { NAV_CONFIG } from "./lib/utiltis";
 import LoginPage from "./pages/Auth/Login";
 import TermsOfUse from "./pages/TermsOfUse/TermsOfUse";
-import PrivacyPolicy from "./pages/PrivacyPolicy/PrivacyPolicy";
+import PrivacyPolicy from "./pages/PrivacyPolicy/Privacypolicy";
 
 const DynamicPage = ({ title }: { title: string }) => <div>Page: {title}</div>;
 
